@@ -93,6 +93,22 @@ export async function apiStripeConfirm(token: string, session_id: string) {
   }) as Promise<DepositResult & { already_credited: boolean }>;
 }
 
+export async function apiCreatePaymentIntent(token: string, amount_usd: number) {
+  return req("/api/wallet/create-payment-intent", {
+    method: "POST",
+    headers: authHeaders(token),
+    body: JSON.stringify({ amount_usd }),
+  }) as Promise<{ client_secret: string; payment_intent_id: string }>;
+}
+
+export async function apiConfirmPayment(token: string, payment_intent_id: string) {
+  return req("/api/wallet/confirm-payment", {
+    method: "POST",
+    headers: authHeaders(token),
+    body: JSON.stringify({ payment_intent_id }),
+  }) as Promise<DepositResult & { already_credited: boolean }>;
+}
+
 // ── Bets ──────────────────────────────────────────────────────────────────────
 
 export type BetResult = {

@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
-import { apiDeposit, apiStripeCheckout, apiStripeConfirm, ApiError, type DepositResult } from "@/lib/custodialApi";
+import { apiDeposit, apiCreatePaymentIntent, apiConfirmPayment, apiStripeConfirm, ApiError, type DepositResult } from "@/lib/custodialApi";
 
 const VDN_PRICE = 0.01;
 
@@ -65,33 +65,121 @@ function Modal({ title, onClose, children }: { title: string; onClose: () => voi
   );
 }
 
+// ── Stripe inline card form ───────────────────────────────────────────────────
+
+const STRIPE_PK = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? "";
+
+function StripeCardForm({ usdNum, vdnPreview, onSuccess, onCancel }: {
+  usdNum: number; vdnPreview: number;
+  onSuccess: (r: DepositResult) => void;
+  onCancel: () => void;
+}) {
+  const { token } = useAuth();
+  const cardRef   = useRef<HTMLDivElement>(null);
+  const stripeRef = useRef<any>(null);
+  const cardElRef = useRef<any>(null);
+  const [ready,   setReady]   = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error,   setError]   = useState<string | null>(null);
+
+  useEffect(() => {
+    function mount() {
+      const s  = (window as any).Stripe(STRIPE_PK);
+      const el = s.elements().create("card", {
+        style: {
+          base: {
+            color: "#f1f5f9",
+            fontFamily: "inherit",
+            fontSize: "15px",
+            "::placeholder": { color: "#64748b" },
+          },
+          invalid: { color: "#f87171" },
+        },
+      });
+      el.mount(cardRef.current!);
+      el.on("ready", () => setReady(true));
+      stripeRef.current = s;
+      cardElRef.current = el;
+    }
+
+    if ((window as any).Stripe) { mount(); return; }
+    const script    = document.createElement("script");
+    script.src      = "https://js.stripe.com/v3/";
+    script.onload   = mount;
+    document.head.appendChild(script);
+    return () => { cardElRef.current?.destroy(); };
+  }, []);
+
+  async function handlePay() {
+    if (!token) return;
+    setLoading(true); setError(null);
+    try {
+      const { client_secret, payment_intent_id } = await apiCreatePaymentIntent(token, usdNum);
+      const { error: stripeErr } = await stripeRef.current.confirmCardPayment(client_secret, {
+        payment_method: { card: cardElRef.current },
+      });
+      if (stripeErr) { setError(stripeErr.message ?? "Error al procesar"); setLoading(false); return; }
+      const result = await apiConfirmPayment(token, payment_intent_id);
+      onSuccess(result);
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : "Error al procesar el pago");
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="p-4 rounded-xl bg-success/5 border border-success/20 flex justify-between items-center">
+        <span className="text-sm text-muted">Pagarás <span className="font-bold text-foreground">${fmt(usdNum)}</span> y recibirás</span>
+        <span className="text-xl font-black text-success">{vdnPreview.toLocaleString("es", { maximumFractionDigits: 0 })} VDN</span>
+      </div>
+
+      <div>
+        <label className="block text-xs text-muted mb-2">Datos de tarjeta</label>
+        <div
+          ref={cardRef}
+          className="p-3.5 rounded-lg bg-background border border-border focus-within:border-accent transition-colors min-h-[46px]"
+        />
+        {!ready && <p className="text-xs text-muted mt-1">Cargando formulario seguro…</p>}
+      </div>
+
+      {error && <div className="p-3 rounded-lg bg-danger/10 border border-danger/20 text-sm text-danger">{error}</div>}
+
+      <div className="flex gap-2">
+        <button onClick={onCancel} disabled={loading}
+          className="flex-1 py-3 rounded-xl border border-border text-sm font-medium text-muted hover:text-foreground transition-colors disabled:opacity-50">
+          Cancelar
+        </button>
+        <button onClick={handlePay} disabled={loading || !ready}
+          className="flex-1 py-3 rounded-xl bg-accent hover:bg-accent-hover text-white font-bold text-sm transition-colors disabled:opacity-50">
+          {loading ? "Procesando…" : `Pagar $${fmt(usdNum)}`}
+        </button>
+      </div>
+
+      <p className="text-center text-[10px] text-muted flex items-center justify-center gap-1">
+        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+        Pago seguro con Stripe · TLS 1.3
+      </p>
+    </div>
+  );
+}
+
 // ── Deposit modal ─────────────────────────────────────────────────────────────
 
 function DepositModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: (r: DepositResult) => void }) {
   const { token } = useAuth();
   const [amount,  setAmount]  = useState("");
-  const [method,  setMethod]  = useState<"demo" | "stripe" | "spei">("demo");
+  const [method,  setMethod]  = useState<"demo" | "stripe" | "spei">("stripe");
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState<string | null>(null);
+  const [showCard, setShowCard] = useState(false);
 
   const usdNum     = parseFloat(amount) || 0;
   const vdnPreview = usdNum > 0 ? usdNum / VDN_PRICE : 0;
-  const stripeFee  = usdNum > 0 ? +(usdNum * 0.029 + 0.30).toFixed(2) : 0;
 
   async function handleConfirm() {
     if (!token || usdNum < 5) { setError("Mínimo $5 USD"); return; }
-
-    if (method === "stripe") {
-      setLoading(true);
-      try {
-        const { url } = await apiStripeCheckout(token, usdNum);
-        window.location.href = url;
-      } catch (e) {
-        setError(e instanceof ApiError ? e.message : "Error con Stripe");
-        setLoading(false);
-      }
-      return;
-    }
+    if (method === "stripe") { setShowCard(true); return; }
 
     setLoading(true); setError(null);
     try {
@@ -109,6 +197,19 @@ function DepositModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: 
     { id: "demo"   as const, icon: "🧪", label: "Demo",    desc: "Acredita directamente — solo para pruebas",      active: true },
   ];
 
+  if (showCard) {
+    return (
+      <Modal title="Pagar con tarjeta" onClose={onClose}>
+        <StripeCardForm
+          usdNum={usdNum}
+          vdnPreview={vdnPreview}
+          onSuccess={onSuccess}
+          onCancel={() => setShowCard(false)}
+        />
+      </Modal>
+    );
+  }
+
   return (
     <Modal title="Comprar VDN" onClose={onClose}>
       {error && <div className="p-3 rounded-lg bg-danger/10 border border-danger/20 text-sm text-danger">{error}</div>}
@@ -121,12 +222,11 @@ function DepositModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: 
           <input
             type="number" min="5" step="1" value={amount}
             onChange={e => setAmount(e.target.value)}
+            onFocus={e => e.target.select()}
             placeholder="10"
             className="w-full pl-8 pr-4 py-3 rounded-lg bg-background border border-border text-foreground placeholder:text-muted focus:outline-none focus:border-accent transition-colors text-lg font-semibold"
           />
         </div>
-
-        {/* Quick presets */}
         <div className="flex gap-2 mt-2">
           {[5, 10, 25, 50, 100].map(v => (
             <button key={v} onClick={() => setAmount(String(v))}
@@ -141,29 +241,17 @@ function DepositModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: 
         </div>
       </div>
 
-      {/* Live VDN preview */}
-      {vdnPreview > 0 && (
-        <div className="p-4 rounded-xl bg-success/5 border border-success/20 space-y-1.5">
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-muted">Recibirás</span>
-            <span className="text-xl font-black text-success">
-              {vdnPreview.toLocaleString("es", { maximumFractionDigits: 0 })} VDN
-            </span>
-          </div>
-          <div className="flex justify-between text-xs text-muted">
-            <span>Precio</span>
-            <span>1 VDN = $0.01 USD</span>
-          </div>
-          {method === "stripe" && (
-            <div className="flex justify-between text-xs text-muted border-t border-border/50 pt-1.5">
-              <span>Fee Stripe</span>
-              <span>${fmt(stripeFee)} (2.9% + $0.30)</span>
-            </div>
-          )}
+      {/* VDN preview */}
+      {vdnPreview > 0 ? (
+        <div className="p-4 rounded-xl bg-success/5 border border-success/20 flex items-center justify-between">
+          <span className="text-sm text-muted">Recibirás</span>
+          <span className="text-xl font-black text-success">
+            {vdnPreview.toLocaleString("es", { maximumFractionDigits: 0 })} VDN
+          </span>
         </div>
+      ) : (
+        <div className="text-center text-xs text-muted">1 VDN = $0.01 USD · Mínimo $5</div>
       )}
-
-      {!vdnPreview && <div className="text-center text-xs text-muted">1 VDN = $0.01 USD · Mínimo $5</div>}
 
       {/* Payment methods */}
       <div className="space-y-2">
@@ -183,12 +271,8 @@ function DepositModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: 
               <p className="text-sm font-medium text-foreground">{m.label}</p>
               <p className="text-xs text-muted">{m.desc}</p>
             </div>
-            {method === m.id && m.active && (
-              <div className="w-4 h-4 rounded-full bg-accent shrink-0" />
-            )}
-            {!m.active && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded bg-surface-alt text-muted border border-border">Pronto</span>
-            )}
+            {method === m.id && m.active && <div className="w-4 h-4 rounded-full bg-accent shrink-0" />}
+            {!m.active && <span className="text-[10px] px-1.5 py-0.5 rounded bg-surface-alt text-muted border border-border">Pronto</span>}
           </button>
         ))}
       </div>
@@ -197,10 +281,8 @@ function DepositModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: 
         onClick={handleConfirm}
         disabled={loading || usdNum < 5}
         className="w-full py-3 rounded-xl bg-accent hover:bg-accent-hover text-white font-bold text-sm transition-colors disabled:opacity-50">
-        {loading
-          ? "Procesando…"
-          : method === "stripe"
-          ? `Pagar $${fmt(usdNum)} con Stripe`
+        {loading ? "Procesando…"
+          : method === "stripe" ? `Continuar → $${fmt(usdNum)}`
           : `Comprar ${vdnPreview > 0 ? vdnPreview.toLocaleString("es", { maximumFractionDigits: 0 }) + " VDN" : "VDN"}`}
       </button>
     </Modal>
@@ -260,7 +342,7 @@ function WalletInner() {
     const session_id = searchParams.get("session_id");
     if (deposito === "exitoso" && session_id && token) {
       apiStripeConfirm(token, session_id)
-        .then(result => {
+        .then((result: DepositResult) => {
           setSuccessResult(result);
           refreshBalance();
         })
