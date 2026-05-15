@@ -1,0 +1,64 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Light mode (default) ─────────────────────────────────────────────────── */
+:root {
+  --background:  #F8FAFC;
+  --surface:     #FFFFFF;
+  --surface-alt: #F1F5F9;
+  --border:      #E2E8F0;
+  --foreground:  #0F172A;
+  --muted:       #6B7280;
+}
+
+/* ── Dark mode ────────────────────────────────────────────────────────────── */
+.dark {
+  --background:  #0D0D1A;
+  --surface:     #13131F;
+  --surface-alt: #1C1C35;
+  --border:      #1E1E35;
+  --foreground:  #FFFFFF;
+  --muted:       #8B8BA0;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: Inter, system-ui, sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Smooth theme transition on common structural elements */
+body, header, main, aside, nav,
+[class*="bg-surface"], [class*="bg-background"],
+[class*="border-border"] {
+  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #2A2A4A transparent;
+}
+
+/* ── Tap-to-earn game animations ──────────────────────────────────────────── */
+@keyframes float-up {
+  0%   { transform: translateY(0)    scale(1);    opacity: 1; }
+  60%  { transform: translateY(-50px) scale(1.1); opacity: 0.9; }
+  100% { transform: translateY(-90px) scale(0.9); opacity: 0; }
+}
+
+.animate-float-up {
+  animation: float-up 0.9s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes coin-tap {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(0.88); }
+  100% { transform: scale(1); }
+}
+
+.animate-coin-tap {
+  animation: coin-tap 0.15s ease-out forwards;
+}
