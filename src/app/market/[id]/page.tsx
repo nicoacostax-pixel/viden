@@ -26,7 +26,7 @@ import {
   apiGetActivity, ActivityItem,
 } from "@/lib/custodialApi";
 
-const VDN_PRICE_USD = 0.001;
+const VDN_PRICE_USD = 0.01;
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 

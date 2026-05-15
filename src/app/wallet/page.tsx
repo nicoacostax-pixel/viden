@@ -1,17 +1,48 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
-import { apiDeposit, apiBuyVdn, ApiError } from "@/lib/custodialApi";
+import { apiDeposit, apiStripeCheckout, apiStripeConfirm, ApiError, type DepositResult } from "@/lib/custodialApi";
 
-const VDN_PRICE = 0.001;
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
+const VDN_PRICE = 0.01;
 
 function fmt(n: number, dec = 2) {
   return n.toLocaleString("es", { minimumFractionDigits: dec, maximumFractionDigits: dec });
+}
+
+// ── Coin rain animation ───────────────────────────────────────────────────────
+
+function CoinRain({ vdn }: { vdn: number }) {
+  const coins = Array.from({ length: 12 }, (_, i) => i);
+  return (
+    <div className="relative flex flex-col items-center py-8 overflow-hidden select-none">
+      {/* Falling coins */}
+      {coins.map(i => (
+        <span
+          key={i}
+          className="absolute text-2xl animate-bounce"
+          style={{
+            left: `${8 + (i % 6) * 16}%`,
+            top:  `${Math.random() * 60}%`,
+            animationDelay: `${(i * 0.12).toFixed(2)}s`,
+            animationDuration: `${0.6 + (i % 3) * 0.2}s`,
+          }}
+        >
+          🪙
+        </span>
+      ))}
+      <div className="relative z-10 text-center space-y-2 mt-4">
+        <div className="text-5xl font-black text-success animate-pulse">
+          +{vdn.toLocaleString("es", { maximumFractionDigits: 0 })}
+        </div>
+        <div className="text-2xl font-bold text-success">VDN</div>
+        <p className="text-sm text-muted">Acreditados a tu cuenta</p>
+      </div>
+    </div>
+  );
 }
 
 // ── Modal shell ───────────────────────────────────────────────────────────────
@@ -36,199 +67,216 @@ function Modal({ title, onClose, children }: { title: string; onClose: () => voi
 
 // ── Deposit modal ─────────────────────────────────────────────────────────────
 
-function DepositModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
+function DepositModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: (r: DepositResult) => void }) {
   const { token } = useAuth();
   const [amount,  setAmount]  = useState("");
   const [method,  setMethod]  = useState<"demo" | "stripe" | "spei">("demo");
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState<string | null>(null);
-  const [done,    setDone]    = useState(false);
 
-  async function handleDeposit() {
-    if (!token || !amount || Number(amount) < 5) {
-      setError("Mínimo $5 USD"); return;
+  const usdNum     = parseFloat(amount) || 0;
+  const vdnPreview = usdNum > 0 ? usdNum / VDN_PRICE : 0;
+  const stripeFee  = usdNum > 0 ? +(usdNum * 0.029 + 0.30).toFixed(2) : 0;
+
+  async function handleConfirm() {
+    if (!token || usdNum < 5) { setError("Mínimo $5 USD"); return; }
+
+    if (method === "stripe") {
+      setLoading(true);
+      try {
+        const { url } = await apiStripeCheckout(token, usdNum);
+        window.location.href = url;
+      } catch (e) {
+        setError(e instanceof ApiError ? e.message : "Error con Stripe");
+        setLoading(false);
+      }
+      return;
     }
+
     setLoading(true); setError(null);
     try {
-      await apiDeposit(token, Number(amount), method);
-      setDone(true);
-      setTimeout(() => { onSuccess(); onClose(); }, 1500);
+      const result = await apiDeposit(token, usdNum, method);
+      onSuccess(result);
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "Error al depositar");
-    } finally { setLoading(false); }
+      setLoading(false);
+    }
   }
 
-  if (done) return (
-    <Modal title="Depositar USD" onClose={onClose}>
-      <div className="text-center py-6 space-y-3">
-        <div className="text-5xl">✅</div>
-        <p className="text-success font-bold text-lg">¡Depósito acreditado!</p>
-        <p className="text-muted text-sm">${amount} USD añadidos a tu cuenta</p>
-      </div>
-    </Modal>
-  );
+  const METHODS = [
+    { id: "stripe" as const, icon: "💳", label: "Tarjeta", desc: "Visa, Mastercard, débito — procesado por Stripe", active: true },
+    { id: "spei"   as const, icon: "🏦", label: "SPEI",    desc: "Transferencia bancaria MX — próximamente",       active: false },
+    { id: "demo"   as const, icon: "🧪", label: "Demo",    desc: "Acredita directamente — solo para pruebas",      active: true },
+  ];
 
   return (
-    <Modal title="Depositar USD" onClose={onClose}>
+    <Modal title="Comprar VDN" onClose={onClose}>
       {error && <div className="p-3 rounded-lg bg-danger/10 border border-danger/20 text-sm text-danger">{error}</div>}
 
+      {/* Amount input */}
       <div>
-        <label className="block text-xs text-muted mb-1.5">Cantidad (USD)</label>
+        <label className="block text-xs text-muted mb-1.5">¿Cuánto quieres depositar? (USD)</label>
         <div className="relative">
           <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted font-medium">$</span>
-          <input type="number" min="5" step="0.01" value={amount} onChange={e => setAmount(e.target.value)}
-            placeholder="50.00"
-            className="w-full pl-8 pr-4 py-3 rounded-lg bg-background border border-border text-foreground placeholder:text-muted focus:outline-none focus:border-accent transition-colors" />
+          <input
+            type="number" min="5" step="1" value={amount}
+            onChange={e => setAmount(e.target.value)}
+            placeholder="10"
+            className="w-full pl-8 pr-4 py-3 rounded-lg bg-background border border-border text-foreground placeholder:text-muted focus:outline-none focus:border-accent transition-colors text-lg font-semibold"
+          />
         </div>
-        {amount && Number(amount) >= 5 && (
-          <p className="text-xs text-success mt-1">
-            Recibirás {(Number(amount) / VDN_PRICE).toLocaleString()} VDN disponibles
-          </p>
-        )}
-      </div>
 
-      <div>
-        <label className="block text-xs text-muted mb-2">Método de pago</label>
-        <div className="space-y-2">
-          {([
-            { id: "demo", icon: "🧪", label: "Demo (testnet)", desc: "Acredita directamente — solo para pruebas", available: true },
-            { id: "stripe", icon: "💳", label: "Tarjeta de crédito", desc: "Próximamente via Stripe", available: false },
-            { id: "spei", icon: "🏦", label: "SPEI", desc: "Próximamente — transferencia bancaria MX", available: false },
-          ] as const).map(m => (
-            <button key={m.id} onClick={() => m.available && setMethod(m.id)}
-              disabled={!m.available}
-              className={`w-full flex items-center gap-3 p-3 rounded-xl border transition-all text-left ${
-                method === m.id && m.available
-                  ? "border-accent bg-accent/5"
-                  : m.available
-                  ? "border-border hover:border-border/80"
-                  : "border-border opacity-40 cursor-not-allowed"
+        {/* Quick presets */}
+        <div className="flex gap-2 mt-2">
+          {[5, 10, 25, 50, 100].map(v => (
+            <button key={v} onClick={() => setAmount(String(v))}
+              className={`flex-1 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${
+                amount === String(v)
+                  ? "border-accent text-accent bg-accent/5"
+                  : "border-border hover:border-accent text-muted hover:text-foreground"
               }`}>
-              <span className="text-xl">{m.icon}</span>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground">{m.label}</p>
-                <p className="text-xs text-muted">{m.desc}</p>
-              </div>
-              {method === m.id && m.available && (
-                <div className="w-4 h-4 rounded-full bg-accent flex-shrink-0" />
-              )}
+              ${v}
             </button>
           ))}
         </div>
       </div>
 
-      <button onClick={handleDeposit} disabled={loading || !amount || Number(amount) < 5}
-        className="w-full py-3 rounded-xl bg-accent hover:bg-accent-hover text-white font-bold text-sm transition-colors disabled:opacity-50">
-        {loading ? "Procesando…" : `Depositar $${amount || "0"} USD`}
-      </button>
-    </Modal>
-  );
-}
-
-// ── Buy VDN modal ─────────────────────────────────────────────────────────────
-
-function BuyVdnModal({ balanceUsd, onClose, onSuccess }: { balanceUsd: number; onClose: () => void; onSuccess: () => void }) {
-  const { token } = useAuth();
-  const [amount,  setAmount]  = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error,   setError]   = useState<string | null>(null);
-  const [done,    setDone]    = useState<number | null>(null);
-
-  const vdnAmount = amount ? Number(amount) / VDN_PRICE : 0;
-
-  async function handleBuy() {
-    if (!token || !amount || Number(amount) <= 0) return;
-    if (Number(amount) > balanceUsd) { setError("Saldo USD insuficiente"); return; }
-    setLoading(true); setError(null);
-    try {
-      const res = await apiBuyVdn(token, Number(amount));
-      setDone(res.vdn_purchased);
-      setTimeout(() => { onSuccess(); onClose(); }, 1800);
-    } catch (e) {
-      setError(e instanceof ApiError ? e.message : "Error al comprar VDN");
-    } finally { setLoading(false); }
-  }
-
-  if (done !== null) return (
-    <Modal title="Comprar VDN" onClose={onClose}>
-      <div className="text-center py-6 space-y-3">
-        <div className="text-5xl">🪙</div>
-        <p className="text-success font-bold text-lg">¡VDN comprados!</p>
-        <p className="text-accent-light text-2xl font-black">+{done.toLocaleString()} VDN</p>
-        <p className="text-muted text-sm">Añadidos a tu balance</p>
-      </div>
-    </Modal>
-  );
-
-  return (
-    <Modal title="Comprar VDN" onClose={onClose}>
-      {error && <div className="p-3 rounded-lg bg-danger/10 border border-danger/20 text-sm text-danger">{error}</div>}
-
-      <div className="p-3 rounded-lg bg-surface-alt border border-border text-sm flex justify-between">
-        <span className="text-muted">Tu saldo USD</span>
-        <span className="font-semibold text-foreground">${fmt(balanceUsd)}</span>
-      </div>
-
-      <div>
-        <label className="block text-xs text-muted mb-1.5">Gastar (USD)</label>
-        <div className="relative">
-          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted font-medium">$</span>
-          <input type="number" min="0.001" max={balanceUsd} step="0.01" value={amount}
-            onChange={e => setAmount(e.target.value)} placeholder="10.00"
-            className="w-full pl-8 pr-4 py-3 rounded-lg bg-background border border-border text-foreground placeholder:text-muted focus:outline-none focus:border-accent transition-colors" />
+      {/* Live VDN preview */}
+      {vdnPreview > 0 && (
+        <div className="p-4 rounded-xl bg-success/5 border border-success/20 space-y-1.5">
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-muted">Recibirás</span>
+            <span className="text-xl font-black text-success">
+              {vdnPreview.toLocaleString("es", { maximumFractionDigits: 0 })} VDN
+            </span>
+          </div>
+          <div className="flex justify-between text-xs text-muted">
+            <span>Precio</span>
+            <span>1 VDN = $0.01 USD</span>
+          </div>
+          {method === "stripe" && (
+            <div className="flex justify-between text-xs text-muted border-t border-border/50 pt-1.5">
+              <span>Fee Stripe</span>
+              <span>${fmt(stripeFee)} (2.9% + $0.30)</span>
+            </div>
+          )}
         </div>
-      </div>
+      )}
 
-      {/* Live preview */}
-      <div className="p-4 rounded-xl bg-accent/5 border border-accent/20 space-y-2">
-        <div className="flex justify-between text-sm">
-          <span className="text-muted">Precio por VDN</span>
-          <span className="text-foreground font-medium">$0.001 USD</span>
-        </div>
-        <div className="border-t border-accent/20 pt-2 flex justify-between">
-          <span className="text-muted text-sm">Recibirás</span>
-          <span className="text-accent-light font-black text-lg">
-            {vdnAmount > 0 ? vdnAmount.toLocaleString("es", { maximumFractionDigits: 0 }) : "—"} VDN
-          </span>
-        </div>
-      </div>
+      {!vdnPreview && <div className="text-center text-xs text-muted">1 VDN = $0.01 USD · Mínimo $5</div>}
 
-      {/* Quick presets */}
-      <div className="flex gap-2">
-        {[5, 10, 50].map(v => (
-          <button key={v} onClick={() => setAmount(String(Math.min(v, balanceUsd)))}
-            disabled={balanceUsd < v}
-            className="flex-1 py-1.5 rounded-lg text-xs font-medium border border-border hover:border-accent transition-colors disabled:opacity-40">
-            ${v}
+      {/* Payment methods */}
+      <div className="space-y-2">
+        {METHODS.map(m => (
+          <button key={m.id}
+            onClick={() => m.active && setMethod(m.id)}
+            disabled={!m.active}
+            className={`w-full flex items-center gap-3 p-3 rounded-xl border transition-all text-left ${
+              method === m.id && m.active
+                ? "border-accent bg-accent/5"
+                : m.active
+                ? "border-border hover:border-muted"
+                : "border-border opacity-40 cursor-not-allowed"
+            }`}>
+            <span className="text-xl">{m.icon}</span>
+            <div className="flex-1">
+              <p className="text-sm font-medium text-foreground">{m.label}</p>
+              <p className="text-xs text-muted">{m.desc}</p>
+            </div>
+            {method === m.id && m.active && (
+              <div className="w-4 h-4 rounded-full bg-accent shrink-0" />
+            )}
+            {!m.active && (
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-surface-alt text-muted border border-border">Pronto</span>
+            )}
           </button>
         ))}
-        <button onClick={() => setAmount(String(balanceUsd))} disabled={balanceUsd <= 0}
-          className="flex-1 py-1.5 rounded-lg text-xs font-medium border border-border hover:border-accent transition-colors disabled:opacity-40">
-          MAX
-        </button>
       </div>
 
-      <button onClick={handleBuy} disabled={loading || !amount || Number(amount) <= 0 || Number(amount) > balanceUsd}
+      <button
+        onClick={handleConfirm}
+        disabled={loading || usdNum < 5}
         className="w-full py-3 rounded-xl bg-accent hover:bg-accent-hover text-white font-bold text-sm transition-colors disabled:opacity-50">
-        {loading ? "Comprando…" : `Comprar ${vdnAmount > 0 ? vdnAmount.toLocaleString("es", { maximumFractionDigits: 0 }) + " VDN" : "VDN"}`}
+        {loading
+          ? "Procesando…"
+          : method === "stripe"
+          ? `Pagar $${fmt(usdNum)} con Stripe`
+          : `Comprar ${vdnPreview > 0 ? vdnPreview.toLocaleString("es", { maximumFractionDigits: 0 }) + " VDN" : "VDN"}`}
       </button>
     </Modal>
   );
 }
 
-// ── Page ──────────────────────────────────────────────────────────────────────
+// ── Success overlay ───────────────────────────────────────────────────────────
 
-export default function WalletPage() {
+function SuccessOverlay({ result, onClose }: { result: DepositResult; onClose: () => void }) {
+  useEffect(() => {
+    const id = setTimeout(onClose, 3500);
+    return () => clearTimeout(id);
+  }, [onClose]);
+
+  return (
+    <Modal title="¡Compra exitosa!" onClose={onClose}>
+      <CoinRain vdn={result.vdn_received} />
+      <div className="space-y-2 text-sm">
+        <div className="flex justify-between p-3 rounded-lg bg-surface-alt">
+          <span className="text-muted">Pagaste</span>
+          <span className="font-semibold">${fmt(result.usd_paid)} USD</span>
+        </div>
+        <div className="flex justify-between p-3 rounded-lg bg-success/10 border border-success/20">
+          <span className="text-muted">Recibiste</span>
+          <span className="font-bold text-success">+{result.vdn_received.toLocaleString("es", { maximumFractionDigits: 0 })} VDN</span>
+        </div>
+        <div className="flex justify-between p-3 rounded-lg bg-surface-alt">
+          <span className="text-muted">Nuevo balance</span>
+          <span className="font-semibold text-accent-light">{result.new_balance_vdn.toLocaleString("es", { maximumFractionDigits: 0 })} VDN</span>
+        </div>
+      </div>
+      <button onClick={onClose} className="w-full py-2.5 rounded-xl bg-accent hover:bg-accent-hover text-white font-semibold text-sm transition-colors">
+        Continuar
+      </button>
+    </Modal>
+  );
+}
+
+// ── Page inner ────────────────────────────────────────────────────────────────
+
+function WalletInner() {
   const { user, token, balance, isLoggedIn, isLoading, refreshBalance } = useAuth();
-  const router = useRouter();
+  const router       = useRouter();
+  const searchParams = useSearchParams();
 
-  const [modal, setModal] = useState<"deposit" | "buy" | null>(null);
+  const [showDeposit,   setShowDeposit]   = useState(false);
+  const [successResult, setSuccessResult] = useState<DepositResult | null>(null);
+  const [cancelBanner,  setCancelBanner]  = useState(false);
 
   useEffect(() => {
     if (!isLoading && !isLoggedIn) router.push("/login");
   }, [isLoading, isLoggedIn, router]);
 
-  const refresh = useCallback(async () => {
+  // After Stripe redirect: confirm payment and credit VDN
+  useEffect(() => {
+    const deposito   = searchParams.get("deposito");
+    const session_id = searchParams.get("session_id");
+    if (deposito === "exitoso" && session_id && token) {
+      apiStripeConfirm(token, session_id)
+        .then(result => {
+          setSuccessResult(result);
+          refreshBalance();
+        })
+        .catch(() => refreshBalance());
+    } else if (deposito === "cancelado") {
+      setCancelBanner(true);
+      setTimeout(() => setCancelBanner(false), 4000);
+    } else if (deposito === "exitoso") {
+      refreshBalance();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleSuccess = useCallback(async (result: DepositResult) => {
+    setShowDeposit(false);
+    setSuccessResult(result);
     await refreshBalance();
   }, [refreshBalance]);
 
@@ -236,9 +284,9 @@ export default function WalletPage() {
     return <div className="text-center text-muted py-20">Cargando…</div>;
   }
 
-  const usd = balance?.balance_usd ?? user.balance_usd;
-  const vdn = balance?.balance_vdn ?? user.balance_vdn;
+  const vdn     = balance?.balance_vdn     ?? user.balance_vdn;
   const vesting = balance?.balance_vdn_vesting ?? user.balance_vdn_vesting;
+  const usdEq   = vdn * VDN_PRICE;
 
   return (
     <div className="max-w-lg mx-auto space-y-6 py-2">
@@ -247,46 +295,31 @@ export default function WalletPage() {
         <span className="text-sm text-muted">@{user.username}</span>
       </div>
 
-      {/* Balance cards */}
-      <div className="grid grid-cols-1 gap-4">
-        {/* USD balance */}
-        <div className="p-5 rounded-2xl bg-surface border border-border">
-          <div className="flex items-start justify-between mb-4">
-            <div>
-              <p className="text-xs text-muted mb-1">Balance USD</p>
-              <p className="text-4xl font-black text-foreground">${fmt(usd)}</p>
-            </div>
-            <span className="text-3xl">💵</span>
+      {/* VDN balance card */}
+      <div className="p-6 rounded-2xl bg-surface border border-border">
+        <div className="flex items-start justify-between mb-2">
+          <div>
+            <p className="text-xs text-muted mb-1">Balance VDN</p>
+            <p className="text-5xl font-black text-accent-light tabular-nums">
+              {vdn.toLocaleString("es", { maximumFractionDigits: 0 })}
+            </p>
+            <p className="text-sm text-muted mt-1">≈ ${fmt(usdEq)} USD</p>
           </div>
-          <button onClick={() => setModal("deposit")}
-            className="w-full py-2.5 rounded-xl bg-accent hover:bg-accent-hover text-white font-semibold text-sm transition-colors">
-            + Depositar USD
-          </button>
+          <span className="text-4xl">🪙</span>
         </div>
 
-        {/* VDN balance */}
-        <div className="p-5 rounded-2xl bg-surface border border-border">
-          <div className="flex items-start justify-between mb-4">
-            <div>
-              <p className="text-xs text-muted mb-1">Balance VDN</p>
-              <p className="text-4xl font-black text-accent-light">
-                {vdn.toLocaleString("es", { maximumFractionDigits: 0 })}
-              </p>
-              <p className="text-sm text-muted mt-1">≈ ${fmt(vdn * VDN_PRICE)} USD</p>
-            </div>
-            <span className="text-3xl">🪙</span>
+        {vesting > 0 && (
+          <div className="mb-4 p-2 rounded-lg bg-warning/10 border border-warning/20 text-xs text-warning flex justify-between">
+            <span>⏳ En vesting</span>
+            <span className="font-semibold">{vesting.toLocaleString("es", { maximumFractionDigits: 0 })} VDN</span>
           </div>
-          {vesting > 0 && (
-            <div className="mb-3 p-2 rounded-lg bg-warning/10 border border-warning/20 text-xs text-warning flex justify-between">
-              <span>⏳ En vesting</span>
-              <span className="font-semibold">{vesting.toLocaleString("es", { maximumFractionDigits: 0 })} VDN</span>
-            </div>
-          )}
-          <button onClick={() => setModal("buy")} disabled={usd <= 0}
-            className="w-full py-2.5 rounded-xl bg-success hover:bg-green-500 text-white font-semibold text-sm transition-colors disabled:opacity-40">
-            Comprar VDN con USD
-          </button>
-        </div>
+        )}
+
+        <button
+          onClick={() => setShowDeposit(true)}
+          className="w-full mt-4 py-3 rounded-xl bg-accent hover:bg-accent-hover text-white font-bold text-sm transition-colors flex items-center justify-center gap-2">
+          💳 Depositar
+        </button>
       </div>
 
       {/* Stats */}
@@ -309,32 +342,46 @@ export default function WalletPage() {
           🎯 Ver Mercados
         </Link>
         <Link href="/portfolio" className="flex-1 py-3 rounded-xl bg-surface border border-border text-sm text-center font-medium hover:border-accent transition-colors text-foreground">
-          📊 Mi Portfolio
+          📊 Portfolio
         </Link>
       </div>
 
-      {/* Referral code */}
+      {/* Referral */}
       <div className="p-4 rounded-xl bg-surface border border-border">
         <p className="text-xs text-muted mb-2">Tu código de referido</p>
         <div className="flex items-center gap-3">
-          <code className="text-lg font-black text-accent-light tracking-widest">
-            {user.referral_code}
-          </code>
-          <button onClick={() => navigator.clipboard.writeText(user.referral_code)}
+          <code className="text-lg font-black text-accent-light tracking-widest">{user.referral_code}</code>
+          <button
+            onClick={() => navigator.clipboard.writeText(user.referral_code)}
             className="text-xs text-muted hover:text-foreground border border-border px-2 py-1 rounded-md transition-colors">
             Copiar
           </button>
         </div>
-        <p className="text-xs text-muted mt-1">Comparte este código — tú y tu referido reciben 200 VDN extra</p>
+        <p className="text-xs text-muted mt-1">Comparte — tú y tu referido reciben 200 VDN extra</p>
       </div>
 
-      {/* Modals */}
-      {modal === "deposit" && (
-        <DepositModal onClose={() => setModal(null)} onSuccess={refresh} />
+      {/* Cancelled banner */}
+      {cancelBanner && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-xl bg-surface border border-border shadow-xl text-sm text-muted">
+          Pago cancelado — no se realizó ningún cargo.
+        </div>
       )}
-      {modal === "buy" && (
-        <BuyVdnModal balanceUsd={usd} onClose={() => setModal(null)} onSuccess={refresh} />
+
+      {/* Modals */}
+      {showDeposit && (
+        <DepositModal onClose={() => setShowDeposit(false)} onSuccess={handleSuccess} />
+      )}
+      {successResult && (
+        <SuccessOverlay result={successResult} onClose={() => setSuccessResult(null)} />
       )}
     </div>
+  );
+}
+
+export default function WalletPage() {
+  return (
+    <Suspense fallback={<div className="text-center text-muted py-20">Cargando…</div>}>
+      <WalletInner />
+    </Suspense>
   );
 }

@@ -6,6 +6,7 @@ import { AuthProvider } from "@/context/AuthContext";
 import { WalletButton } from "@/components/WalletButton";
 import { WrongNetworkBanner } from "@/components/WrongNetworkBanner";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { NavLinks } from "@/components/NavLinks";
 import Link from "next/link";
 
 export const metadata: Metadata = {
@@ -25,7 +26,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <AuthProvider>
           <Web3Provider>
             <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-sm">
-              <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
+              <div className="max-w-5xl mx-auto px-3 sm:px-4 py-2.5 flex items-center justify-between gap-2">
                 <div className="flex items-center gap-6">
                   <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" className="w-7 h-7">
@@ -33,12 +34,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     </svg>
                     <span className="text-xl font-bold text-foreground">Viden</span>
                   </Link>
-                  <nav className="hidden sm:flex gap-5 text-sm text-muted">
-                    <Link href="/" className="hover:text-foreground transition-colors">Mercados</Link>
-                    <Link href="/portfolio" className="hover:text-foreground transition-colors">Portfolio</Link>
-                    <Link href="/juegos" className="hover:text-foreground transition-colors">Juegos</Link>
-                    <Link href="/admin" className="hover:text-foreground transition-colors">Admin</Link>
-                  </nav>
+                  <NavLinks />
                 </div>
                 <div className="flex items-center gap-2">
                   <ThemeToggle />

@@ -267,7 +267,7 @@ function TrendingSidebar({
 // ── HeroSection ───────────────────────────────────────────────────────────────
 
 function HeroSection({ markets }: { markets: ApiMarket[] }) {
-  const featured = useMemo(() => markets.slice(0, 8), [markets]);
+  const featured = useMemo(() => markets.slice(0, 11), [markets]);
   const [activeIdx, setActiveIdx] = useState(0);
   const [fading, setFading]       = useState(false);
   const [paused, setPaused]       = useState(false);
@@ -277,16 +277,24 @@ function HeroSection({ markets }: { markets: ApiMarket[] }) {
 
   useEffect(() => { activeIdxRef.current = activeIdx; }, [activeIdx]);
 
+  // reset to first when category changes (featured list changes)
+  useEffect(() => {
+    transitioningRef.current = false;
+    setFading(false);
+    setActiveIdx(0);
+  }, [featured]);
+
   const goTo = useCallback((idx: number) => {
-    if (transitioningRef.current) return;
+    if (transitioningRef.current || featured.length === 0) return;
+    const nextIdx = (idx + featured.length) % featured.length;
     transitioningRef.current = true;
     setFading(true);
     setTimeout(() => {
-      setActiveIdx(idx);
+      setActiveIdx(nextIdx);
       setFading(false);
       transitioningRef.current = false;
     }, 180);
-  }, []);
+  }, [featured.length]);
 
   const prev = useCallback(() => {
     goTo((activeIdxRef.current - 1 + featured.length) % featured.length);
@@ -314,7 +322,33 @@ function HeroSection({ markets }: { markets: ApiMarket[] }) {
         onMouseEnter={() => setPaused(true)}
         onMouseLeave={() => setPaused(false)}
       >
-        <CarouselCard market={featured[activeIdx]} fading={fading} />
+        <div className="relative" style={{ isolation: "isolate" }}>
+          <CarouselCard market={featured[activeIdx]} fading={fading} />
+
+          {featured.length > 1 && (
+            <div className="absolute right-4 top-4 z-20 flex items-center gap-2 rounded-full border border-border bg-surface/95 px-2 py-1 shadow-lg shadow-black/5 backdrop-blur">
+              <button
+                type="button"
+                onClick={prev}
+                className="flex h-7 w-7 items-center justify-center rounded-full text-lg leading-none text-muted transition-colors hover:bg-surface-alt hover:text-foreground"
+                aria-label="Mercado anterior"
+              >
+                ‹
+              </button>
+              <span className="min-w-[48px] text-center text-xs font-semibold tabular-nums text-muted">
+                {activeIdx + 1} of {featured.length}
+              </span>
+              <button
+                type="button"
+                onClick={next}
+                className="flex h-7 w-7 items-center justify-center rounded-full text-lg leading-none text-muted transition-colors hover:bg-surface-alt hover:text-foreground"
+                aria-label="Mercado siguiente"
+              >
+                ›
+              </button>
+            </div>
+          )}
+        </div>
 
         {/* Nav row */}
         <div className="flex items-center justify-between mt-3 px-1">
@@ -331,27 +365,6 @@ function HeroSection({ markets }: { markets: ApiMarket[] }) {
                 ].join(" ")}
               />
             ))}
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-muted">{activeIdx + 1} de {featured.length}</span>
-            <button
-              onClick={prev}
-              className="w-7 h-7 rounded-full border border-border flex items-center justify-center text-muted hover:text-foreground hover:border-muted transition-colors"
-              aria-label="Anterior"
-            >
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                <path d="M7.5 2L4 6l3.5 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </button>
-            <button
-              onClick={next}
-              className="w-7 h-7 rounded-full border border-border flex items-center justify-center text-muted hover:text-foreground hover:border-muted transition-colors"
-              aria-label="Siguiente"
-            >
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                <path d="M4.5 2L8 6l-3.5 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </button>
           </div>
         </div>
       </div>
@@ -506,17 +519,19 @@ export default function Home() {
     return { active, vol: totalVdn.toLocaleString("es") };
   }, [rawMarkets]);
 
+  const filteredByCategory = useMemo(() => {
+    if (activeCategory === "all") return rawMarkets;
+    return rawMarkets.filter(m => matchCategory(m) === activeCategory);
+  }, [rawMarkets, activeCategory]);
+
   const markets: MarketData[] = useMemo(() => {
-    let list = rawMarkets;
-    if (activeCategory !== "all") {
-      list = list.filter(m => matchCategory(m) === activeCategory);
-    }
+    let list = filteredByCategory;
     if (search.trim()) {
       const q = search.toLowerCase();
       list = list.filter(m => m.question.toLowerCase().includes(q));
     }
     return list.map(toMarketData);
-  }, [rawMarkets, activeCategory, search]);
+  }, [filteredByCategory, search]);
 
   return (
     <div className="flex flex-col gap-0">
@@ -578,8 +593,8 @@ export default function Home() {
       </div>
 
       {/* Hero carousel */}
-      {!isLoading && !error && rawMarkets.length > 0 && (
-        <HeroSection markets={rawMarkets} />
+      {!isLoading && !error && filteredByCategory.length > 0 && (
+        <HeroSection markets={filteredByCategory} />
       )}
 
       {/* Loading */}

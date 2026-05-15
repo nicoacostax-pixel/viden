@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useAccount, useReadContract } from "wagmi";
 import { useCreateMarket, useResolveMarket, useMarketCount } from "@/hooks/usePredictionMarket";
 import { useWrongNetwork } from "@/hooks/useWrongNetwork";
+import { useAuth } from "@/context/AuthContext";
 import { TxLink } from "@/components/TxLink";
 import { PREDICTION_MARKET_ABI, PREDICTION_MARKET_ADDRESS } from "@/config/contracts";
 
@@ -117,6 +118,7 @@ await market.grantRole(ROLE, "${address}");`}
 
 export default function Admin() {
   const { address, isConnected } = useAccount();
+  const { isAdmin } = useAuth();
   const { count } = useMarketCount();
   const { isWrongNetwork } = useWrongNetwork();
 
@@ -179,10 +181,10 @@ export default function Admin() {
     resolve.resolve(BigInt(resolveId), resolveResult);
   };
 
-  if (!isConnected) {
+  if (!isConnected && !isAdmin) {
     return (
       <div className="text-center py-20">
-        <p className="text-lg text-muted">Conecta tu wallet para acceder al panel admin.</p>
+        <p className="text-lg text-muted">Acceso restringido al panel admin.</p>
       </div>
     );
   }

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useAccount, useConnect, useDisconnect, useWalletClient } from "wagmi";
+import { injected } from "wagmi/connectors";
 import { useVDNBalance } from "@/hooks/useVDNToken";
 import { VDN_TOKEN_ADDRESS } from "@/config/contracts";
 import { useAuth } from "@/context/AuthContext";
@@ -50,10 +51,19 @@ function AddVDNButton() {
 
 function CustodialUserMenu() {
   const { user, balance, logout } = useAuth();
+  const { isConnected, address } = useAccount();
+  const { connect, connectors } = useConnect();
+  const { disconnect } = useDisconnect();
   const [open, setOpen] = useState(false);
 
   if (!user) return null;
   const vdn = balance?.balance_vdn ?? user.balance_vdn;
+
+  const handleConnectWallet = () => {
+    const connector = connectors.find(c => c.id === "injected") ?? connectors[0];
+    if (connector) connect({ connector });
+    setOpen(false);
+  };
 
   return (
     <div className="relative">
@@ -63,7 +73,10 @@ function CustodialUserMenu() {
       >
         <div className="flex flex-col items-end leading-none">
           <span className="text-xs font-semibold text-foreground">{user.username}</span>
-          <span className="text-[10px] text-accent-light">{vdn.toLocaleString("es", { maximumFractionDigits: 0 })} VDN</span>
+          <span className="text-[10px] text-accent-light">
+            {vdn.toLocaleString("es", { maximumFractionDigits: 0 })} VDN
+            <span className="text-muted ml-1">(${(vdn * 0.01).toLocaleString("es", { minimumFractionDigits: 2, maximumFractionDigits: 2 })})</span>
+          </span>
         </div>
         <svg className={`w-3 h-3 text-muted transition-transform ${open ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
@@ -71,7 +84,7 @@ function CustodialUserMenu() {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-1 w-44 rounded-xl bg-surface border border-border shadow-xl z-50 overflow-hidden">
+        <div className="absolute right-0 top-full mt-1 w-52 rounded-xl bg-surface border border-border shadow-xl z-50 overflow-hidden">
           <Link href="/wallet" onClick={() => setOpen(false)}
             className="block px-4 py-2.5 text-sm hover:bg-surface-alt transition-colors text-foreground">
             💰 Mi Wallet
@@ -80,6 +93,20 @@ function CustodialUserMenu() {
             className="block px-4 py-2.5 text-sm hover:bg-surface-alt transition-colors text-foreground">
             📊 Portfolio
           </Link>
+          <div className="border-t border-border" />
+          {isConnected ? (
+            <button onClick={() => { disconnect(); setOpen(false); }}
+              className="w-full text-left px-4 py-2.5 text-sm hover:bg-surface-alt transition-colors text-foreground flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-success shrink-0" />
+              {address?.slice(0, 6)}…{address?.slice(-4)}
+              <span className="ml-auto text-xs text-muted">Desconectar</span>
+            </button>
+          ) : (
+            <button onClick={handleConnectWallet}
+              className="w-full text-left px-4 py-2.5 text-sm hover:bg-surface-alt transition-colors text-foreground flex items-center gap-2">
+              🦊 Conectar wallet
+            </button>
+          )}
           <div className="border-t border-border" />
           <button onClick={() => { logout(); setOpen(false); }}
             className="w-full text-left px-4 py-2.5 text-sm text-danger hover:bg-danger/10 transition-colors">
@@ -130,21 +157,15 @@ export function WalletButton() {
   const { isLoggedIn, isLoading } = useAuth();
 
   if (isLoading) {
-    return <div className="w-24 h-9 rounded-lg bg-surface-alt animate-pulse" />;
+    return <div className="w-20 h-9 rounded-lg bg-surface-alt animate-pulse" />;
   }
 
   if (isLoggedIn) {
-    return (
-      <div className="flex items-center gap-2">
-        <MetaMaskButton />
-        <CustodialUserMenu />
-      </div>
-    );
+    return <CustodialUserMenu />;
   }
 
   return (
     <div className="flex items-center gap-2">
-      <MetaMaskButton />
       <Link href="/login"
         className="px-3 py-2 rounded-lg border border-border bg-surface-alt text-sm font-medium hover:border-accent transition-colors text-foreground">
         Entrar

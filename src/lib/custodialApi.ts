@@ -31,6 +31,7 @@ export type AuthUser = {
   referral_code: string;
   referred_by: number | null;
   created_at: number;
+  is_admin: number;
 };
 
 export async function apiRegister(email: string, password: string, username: string, referral_code?: string) {
@@ -61,12 +62,35 @@ export async function apiGetBalance(token: string) {
   return req("/api/wallet/balance", { headers: authHeaders(token) }) as Promise<WalletBalance>;
 }
 
-export async function apiDeposit(token: string, amount_usd: number, payment_method = "stripe_test") {
-  return req("/api/wallet/deposit", { method: "POST", headers: authHeaders(token), body: JSON.stringify({ amount_usd, payment_method }) });
+export type DepositResult = {
+  vdn_received: number;
+  usd_paid: number;
+  price_per_vdn: number;
+  new_balance_vdn: number;
+};
+
+export async function apiDeposit(token: string, amount_usd: number, payment_method = "demo") {
+  return req("/api/wallet/deposit", {
+    method: "POST",
+    headers: authHeaders(token),
+    body: JSON.stringify({ amount_usd, payment_method }),
+  }) as Promise<DepositResult>;
 }
 
-export async function apiBuyVdn(token: string, amount_usd: number) {
-  return req("/api/wallet/buy-vdn", { method: "POST", headers: authHeaders(token), body: JSON.stringify({ amount_usd }) });
+export async function apiStripeCheckout(token: string, amount_usd: number) {
+  return req("/api/wallet/stripe-checkout", {
+    method: "POST",
+    headers: authHeaders(token),
+    body: JSON.stringify({ amount_usd }),
+  }) as Promise<{ url: string }>;
+}
+
+export async function apiStripeConfirm(token: string, session_id: string) {
+  return req("/api/wallet/stripe-confirm", {
+    method: "POST",
+    headers: authHeaders(token),
+    body: JSON.stringify({ session_id }),
+  }) as Promise<DepositResult & { already_credited: boolean }>;
 }
 
 // ── Bets ──────────────────────────────────────────────────────────────────────

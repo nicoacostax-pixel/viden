@@ -11,6 +11,7 @@ type AuthContextValue = {
   token:      string | null;
   balance:    WalletBalance | null;
   isLoggedIn: boolean;
+  isAdmin:    boolean;
   isLoading:  boolean;
   login:      (email: string, password: string) => Promise<void>;
   register:   (email: string, password: string, username: string, referralCode?: string) => Promise<{ welcomeVdn: number }>;
@@ -19,7 +20,7 @@ type AuthContextValue = {
 };
 
 const AuthContext = createContext<AuthContextValue>({
-  user: null, token: null, balance: null, isLoggedIn: false, isLoading: true,
+  user: null, token: null, balance: null, isLoggedIn: false, isAdmin: false, isLoading: true,
   login: async () => {}, register: async () => ({ welcomeVdn: 0 }),
   logout: () => {}, refreshBalance: async () => {},
 });
@@ -89,7 +90,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthContext.Provider value={{
-      user, token, balance, isLoggedIn: !!token, isLoading,
+      user, token, balance, isLoggedIn: !!token, isAdmin: !!(user?.is_admin), isLoading,
       login, register, logout, refreshBalance,
     }}>
       {children}

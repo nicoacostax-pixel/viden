@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { MarketData, formatVDN, getProbability, getOutcomeLabel } from "@/hooks/usePredictionMarket";
 import { Outcome } from "@/config/contracts";
@@ -16,15 +17,30 @@ export function getCategoryEmoji(question: string): string {
   return "🔮";
 }
 
-function timeLeft(closeTime: bigint): string {
+function calcTimeLeft(closeTime: bigint): string {
   const diff = Number(closeTime) - Math.floor(Date.now() / 1000);
   if (diff <= 0) return "Cerrado";
   const d = Math.floor(diff / 86_400);
   const h = Math.floor((diff % 86_400) / 3_600);
   const m = Math.floor((diff % 3_600) / 60);
-  if (d > 0) return `${d}d ${h}h`;
-  if (h > 0) return `${h}h ${m}m`;
-  return `${m}m`;
+  const s = diff % 60;
+  if (d > 0) return `${d}d ${h}h ${m}m ${s}s`;
+  if (h > 0) return `${h}h ${m}m ${s}s`;
+  if (m > 0) return `${m}m ${s}s`;
+  return `${s}s`;
+}
+
+function useTimeLeft(closeTime: bigint): string {
+  const [label, setLabel] = useState(() => calcTimeLeft(closeTime));
+
+  useEffect(() => {
+    const diff = Number(closeTime) - Math.floor(Date.now() / 1000);
+    if (diff <= 0) return;
+    const id = setInterval(() => setLabel(calcTimeLeft(closeTime)), 1_000);
+    return () => clearInterval(id);
+  }, [closeTime]);
+
+  return label;
 }
 
 // ── MarketCard ────────────────────────────────────────────────────────────────
@@ -35,6 +51,7 @@ export function MarketCard({ market }: { market: MarketData }) {
   const isOpen      = market.outcome === Outcome.OPEN;
   const emoji       = getCategoryEmoji(market.question);
   const closed      = Number(market.closeTime) <= Math.floor(Date.now() / 1000);
+  const timeLeft    = useTimeLeft(market.closeTime);
 
   return (
     <Link href={`/market/${market.marketId}`}>
@@ -84,7 +101,7 @@ export function MarketCard({ market }: { market: MarketData }) {
           </span>
           {isOpen && !closed && (
             <span className="text-[11px] text-warning font-medium">
-              ⏱ {timeLeft(market.closeTime)}
+              ⏱ {timeLeft}
             </span>
           )}
           {closed && isOpen && (
