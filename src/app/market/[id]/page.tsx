@@ -25,6 +25,7 @@ import {
   apiGetPositions, PositionsData,
   apiGetActivity, ActivityItem,
 } from "@/lib/custodialApi";
+import { getMarket, type ApiMarket } from "@/lib/api";
 
 const VDN_PRICE_USD = 0.01;
 
@@ -973,37 +974,57 @@ export default function MarketDetail() {
   const { address } = useAccount();
   const { isLoggedIn } = useAuth();
 
-  const { market, isLoading, refetch: refetchMarket } = useMarket(marketId);
+  // Custodial market data (REST API) — source of truth for timestamps/status
+  const [custodialMkt, setCustodialMkt] = useState<ApiMarket | null>(null);
+  const [custodialLoading, setCustodialLoading] = useState(true);
+
+  useEffect(() => {
+    setCustodialLoading(true);
+    getMarket(Number(params.id as string))
+      .then(({ market }) => setCustodialMkt(market))
+      .catch(() => {})
+      .finally(() => setCustodialLoading(false));
+  }, [params.id]);
+
+  const { market, isLoading: chainLoading, refetch: refetchMarket } = useMarket(marketId);
   const { position, refetch: refetchPos } = usePosition(marketId, address);
   const claim = useClaimReward();
-  const countdown = useCountdown(market?.closeTime ?? 0n);
 
-  // Refresh pools after a successful bet (triggered by child, propagated via refetch)
-  useEffect(() => {
-    if (!market) return;
-  }, [market]);
+  // Prefer custodial API timestamps over on-chain (which returns 0 for custodial markets)
+  const effectiveCloseTime   = custodialMkt ? BigInt(custodialMkt.closeTime)   : (market?.closeTime   ?? 0n);
+  const effectiveResolveTime = custodialMkt ? BigInt(custodialMkt.resolveTime) : (market?.resolveTime ?? 0n);
+  const effectiveQuestion    = custodialMkt?.question || market?.question || "";
+
+  const countdown = useCountdown(effectiveCloseTime);
 
   useEffect(() => {
     if (claim.isSuccess) refetchPos();
   }, [claim.isSuccess, refetchPos]);
 
+  const isLoading = custodialLoading && chainLoading;
+
   if (isLoading)
     return <div className="text-center text-muted py-20">Cargando mercado…</div>;
-  if (!market)
+  if (!custodialMkt && !market)
     return <div className="text-center text-muted py-20">Mercado no encontrado.</div>;
 
   const now = Math.floor(Date.now() / 1000);
-  const isOpen   = market.outcome === Outcome.OPEN;
-  const isClosed = now >= Number(market.closeTime);
+
+  // Use custodial status when available; fall back to on-chain outcome
+  const isOpen = custodialMkt
+    ? custodialMkt.status === "OPEN"
+    : (market?.outcome === Outcome.OPEN);
+  const isClosed = now >= Number(effectiveCloseTime);
 
   const canClaim =
+    market &&
     position &&
     position.netAmount > 0n &&
     !position.claimed &&
     (market.outcome === Outcome.CANCELLED || market.resolved);
 
   const userWon =
-    market.resolved &&
+    market?.resolved &&
     position &&
     ((market.outcome === Outcome.YES && position.isYes) ||
       (market.outcome === Outcome.NO && !position.isYes));
@@ -1021,7 +1042,7 @@ export default function MarketDetail() {
 
       {/* Question */}
       <h1 className="text-2xl sm:text-3xl font-bold text-foreground leading-snug mb-4">
-        {market.question}
+        {effectiveQuestion}
       </h1>
 
       {/* Status + countdown */}
@@ -1030,12 +1051,16 @@ export default function MarketDetail() {
           className={`px-3 py-1 rounded-full text-sm font-medium ${
             isOpen && !isClosed
               ? "bg-success/10 text-success"
-              : market.outcome === Outcome.CANCELLED
+              : (market?.outcome === Outcome.CANCELLED || custodialMkt?.status === "CANCELLED")
               ? "bg-muted/20 text-muted"
               : "bg-accent/10 text-accent-light"
           }`}
         >
-          {isOpen && !isClosed ? "Abierto" : getOutcomeLabel(market.outcome)}
+          {isOpen && !isClosed
+            ? "Abierto"
+            : custodialMkt
+            ? (custodialMkt.status === "YES" ? "SÍ ganó" : custodialMkt.status === "NO" ? "NO ganó" : custodialMkt.status === "CANCELLED" ? "Cancelado" : "Cerrado")
+            : getOutcomeLabel(market?.outcome ?? Outcome.OPEN)}
         </span>
 
         {isOpen && !isClosed && (
@@ -1054,8 +1079,8 @@ export default function MarketDetail() {
 
       {/* Pool visualization */}
       <PoolCard
-        totalPoolYes={market.totalPoolYes}
-        totalPoolNo={market.totalPoolNo}
+        totalPoolYes={market?.totalPoolYes ?? 0n}
+        totalPoolNo={market?.totalPoolNo ?? 0n}
       />
 
       {/* Bet form — only when market is open AND bets still accepted */}
@@ -1076,14 +1101,14 @@ export default function MarketDetail() {
       {canClaim && (
         <div className="p-5 rounded-xl bg-surface border border-border mb-6">
           <h2 className="font-semibold text-foreground mb-3">
-            {market.outcome === Outcome.CANCELLED
+            {market?.outcome === Outcome.CANCELLED
               ? "Reembolso disponible"
               : userWon
               ? "🏆 ¡Ganaste! Cobra tu recompensa"
               : "Cobrar"}
           </h2>
           <p className="text-sm text-muted mb-4">
-            {market.outcome === Outcome.CANCELLED
+            {market?.outcome === Outcome.CANCELLED
               ? `Recibirás ${formatVDN(position!.netAmount)} VDN (tu 96% neto de vuelta).`
               : "Tu recompensa es proporcional al porcentaje del pool ganador que aportaste."}
           </p>
@@ -1128,25 +1153,29 @@ export default function MarketDetail() {
       <div className="p-4 rounded-lg bg-surface border border-border text-xs text-muted space-y-1.5">
         <div className="flex justify-between">
           <span>Creador</span>
-          <a
-            href={`${EXPLORER_BASE}/address/${market.creator}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-accent-light hover:underline"
-          >
-            {market.creator.slice(0, 8)}…{market.creator.slice(-6)}
-          </a>
+          {market?.creator && market.creator !== "0x0000000000000000000000000000000000000000" ? (
+            <a
+              href={`${EXPLORER_BASE}/address/${market.creator}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-accent-light hover:underline"
+            >
+              {market.creator.slice(0, 8)}…{market.creator.slice(-6)}
+            </a>
+          ) : (
+            <span className="text-foreground">{custodialMkt?.creator ?? "admin"}</span>
+          )}
         </div>
         <div className="flex justify-between">
           <span>Cierre de apuestas</span>
           <span className="text-foreground">
-            {new Date(Number(market.closeTime) * 1000).toLocaleString("es")}
+            {new Date(Number(effectiveCloseTime) * 1000).toLocaleString("es")}
           </span>
         </div>
         <div className="flex justify-between">
           <span>Resolución mínima</span>
           <span className="text-foreground">
-            {new Date(Number(market.resolveTime) * 1000).toLocaleString("es")}
+            {new Date(Number(effectiveResolveTime) * 1000).toLocaleString("es")}
           </span>
         </div>
         <div className="flex justify-between">
