@@ -8,6 +8,7 @@ import { WrongNetworkBanner } from "@/components/WrongNetworkBanner";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { NavLinks } from "@/components/NavLinks";
 import Link from "next/link";
+import Image from "next/image";
 
 export const metadata: Metadata = {
   title: "Viden — Mercado de Predicciones",
@@ -29,9 +30,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <div className="max-w-5xl mx-auto px-3 sm:px-4 py-2.5 flex items-center justify-between gap-2">
                 <div className="flex items-center gap-6">
                   <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" className="w-7 h-7">
-                      <path fill="#818CF8" d="M 4 47 C 12 49, 24 73, 37 79 C 46 83, 55 64, 66 38 L 79 10 L 97 2 L 86 18 L 76 42 C 65 66, 54 83, 42 86 C 30 89, 17 68, 9 57 Z"/>
-                    </svg>
+                    <Image src="/icon.png" alt="Viden" width={32} height={32} className="rounded-md" priority />
                     <span className="text-xl font-bold text-foreground">Viden</span>
                   </Link>
                   <NavLinks />
