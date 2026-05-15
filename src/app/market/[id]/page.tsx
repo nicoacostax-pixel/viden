@@ -247,6 +247,7 @@ function CustodialBetForm({ marketId }: { marketId: number }) {
         </div>
         <input type="number" min="0" step="any" value={amount}
           onChange={e => setAmount(e.target.value)}
+          onFocus={e => e.target.select()}
           placeholder="Ej: 1000"
           className={`w-full px-4 py-3 rounded-lg bg-background border text-foreground placeholder:text-muted focus:outline-none transition-colors ${
             overBalance ? "border-danger focus:border-danger" : "border-border focus:border-accent"
@@ -436,6 +437,7 @@ function BetForm({
                 // Reset flow if user changes amount after approve
                 if (bet.step === "approved" || bet.step === "error") bet.reset();
               }}
+              onFocus={e => e.target.select()}
               placeholder="Ej: 1000"
               className={`w-full px-4 py-3 rounded-lg bg-background border text-foreground placeholder:text-muted focus:outline-none transition-colors ${
                 overBalance
