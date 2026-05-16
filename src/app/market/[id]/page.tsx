@@ -401,24 +401,38 @@ function LmsrTradingPanel({
           </div>
 
           {gross > 0 && (() => {
-            const payout  = received;          // total VDN cobras si ganas
-            const profit  = received - gross;  // ganancia neta
-            const roi     = gross > 0 ? (profit / gross) * 100 : 0;
+            const payout   = received;
+            const profit   = received - gross;
+            const roi      = gross > 0 ? (profit / gross) * 100 : 0;
             const isProfit = profit > 0;
+            const color    = side === "yes" ? "text-success" : "text-danger";
+            const bg       = side === "yes" ? "bg-success/5 border-success/20" : "bg-danger/5 border-danger/20";
             return (
               <div className="space-y-2">
-                {/* Pago potencial — destacado */}
-                <div className={`rounded-xl p-4 border ${
-                  side === "yes" ? "bg-success/5 border-success/20" : "bg-danger/5 border-danger/20"
-                }`}>
-                  <div className="text-xs text-muted mb-1">Pago si &ldquo;{side === "yes" ? "SÍ" : "NO"}&rdquo; gana</div>
-                  <div className={`text-3xl font-black tabular-nums ${side === "yes" ? "text-success" : "text-danger"}`}>
+                {/* Pago potencial */}
+                <div className={`rounded-xl p-4 border ${bg}`}>
+                  <div className="text-xs text-muted mb-2">Pago si &ldquo;{side === "yes" ? "SÍ" : "NO"}&rdquo; gana</div>
+
+                  {/* Total grande */}
+                  <div className={`text-3xl font-black tabular-nums mb-3 ${color}`}>
                     {fmt2(payout)} VDN
                   </div>
-                  <div className={`text-sm font-semibold mt-1 ${isProfit ? "text-success" : "text-danger"}`}>
-                    {isProfit ? "+" : ""}{fmt2(profit)} VDN &nbsp;
-                    <span className="text-xs font-medium opacity-75">
-                      ({isProfit ? "+" : ""}{roi.toFixed(1)}% retorno)
+
+                  {/* Desglose: apostado + ganancia = total */}
+                  <div className="flex items-center gap-2 text-sm flex-wrap">
+                    <span className="px-2.5 py-1 rounded-lg bg-background border border-border text-foreground font-semibold tabular-nums">
+                      {fmt2(gross)} apostado
+                    </span>
+                    <span className="text-muted">+</span>
+                    <span className={`px-2.5 py-1 rounded-lg font-semibold tabular-nums ${
+                      isProfit
+                        ? "bg-success/10 border border-success/20 text-success"
+                        : "bg-danger/10 border border-danger/20 text-danger"
+                    }`}>
+                      {isProfit ? "+" : ""}{fmt2(profit)} ganancia
+                    </span>
+                    <span className="text-muted text-xs ml-auto">
+                      {isProfit ? "+" : ""}{roi.toFixed(1)}% retorno
                     </span>
                   </div>
                 </div>
