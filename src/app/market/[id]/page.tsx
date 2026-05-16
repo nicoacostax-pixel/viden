@@ -221,12 +221,16 @@ function PriceChart({ history }: { history: PriceHistoryPoint[] }) {
 // ─── Buy/Sell form (custodial LMSR) ──────────────────────────────────────────
 
 function LmsrTradingPanel({
-  marketId, qYes, qNo, isOpen, onTrade,
+  marketId, qYes, qNo, isOpen, onTrade, forceSell,
 }: {
-  marketId: number; qYes: number; qNo: number; isOpen: boolean; onTrade: () => void;
+  marketId: number; qYes: number; qNo: number; isOpen: boolean; onTrade: () => void; forceSell?: boolean;
 }) {
   const { user, token, balance, isLoggedIn, refreshBalance } = useAuth();
   const [tab, setTab]   = useState<"buy" | "sell">("buy");
+
+  useEffect(() => {
+    if (forceSell) setTab("sell");
+  }, [forceSell]);
   const [side, setSide] = useState<"yes" | "no">("yes");
   const [amount, setAmount] = useState("");
   const [sellShares, setSellShares] = useState("");
@@ -933,17 +937,21 @@ export default function MarketDetail() {
         <div className="mb-4">
           <MyPositionCard
             marketId={numId} qYes={qYes} qNo={qNo} isOpen={isOpen && !isClosed}
-            onSell={() => setForceSell(true)}
+            onSell={() => {
+              setForceSell(true);
+              setTimeout(() => document.getElementById('trading-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+            }}
           />
         </div>
       )}
 
       {/* Buy/Sell panel */}
       {isOpen && !isClosed && (
-        <div className="mb-6">
+        <div id="trading-panel" className="mb-6">
           <LmsrTradingPanel
             marketId={numId} qYes={qYes} qNo={qNo}
             isOpen={isOpen && !isClosed}
+            forceSell={forceSell}
             onTrade={() => { loadPrice(); setForceSell(false); }}
           />
         </div>
