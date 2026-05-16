@@ -218,8 +218,6 @@ export type MarketPrice = {
   implied_prob_yes: number;
   shares_yes:       number;
   shares_no:        number;
-  pool_yes_vdn:     number;
-  pool_no_vdn:      number;
   pool_total_vdn:   number;
   timestamp:        number;
 };
