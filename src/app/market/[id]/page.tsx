@@ -50,12 +50,18 @@ function lmsrGetPrice(qYes: number, qNo: number) {
 
 function lmsrSharesForVDN(qYes: number, qNo: number, side: "yes" | "no", net: number) {
   if (net <= 0) return 0;
-  let lo = 0, hi = net * 1.01;
+  const getCost = (delta: number) => {
+    const before = lmsrCostFn(qYes, qNo);
+    const after  = side === "yes" ? lmsrCostFn(qYes + delta, qNo) : lmsrCostFn(qYes, qNo + delta);
+    return after - before;
+  };
+  // Expand upper bound until it covers net
+  let hi = Math.max(net, 1);
+  while (getCost(hi) < net) hi *= 2;
+  let lo = 0;
   for (let i = 0; i < 64; i++) {
     const mid = (lo + hi) / 2;
-    const before = lmsrCostFn(qYes, qNo);
-    const after  = side === "yes" ? lmsrCostFn(qYes + mid, qNo) : lmsrCostFn(qYes, qNo + mid);
-    if (after - before < net) lo = mid; else hi = mid;
+    if (getCost(mid) < net) lo = mid; else hi = mid;
   }
   return lo;
 }
