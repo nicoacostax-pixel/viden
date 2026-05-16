@@ -7,6 +7,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
 export type ApiMarket = {
   marketId: number;
+  publicId: string | null;
   question: string;
   creator: string;
   closeTime: number;
@@ -20,6 +21,10 @@ export type ApiMarket = {
   emoji: string | null;
   custodialPoolYes: number;
   custodialPoolNo: number;
+  isUserCreated: boolean;
+  statusReview: string | null;
+  resolutionCriteria: string | null;
+  creatorFeeEarned: number;
 };
 
 export type ApiPosition = {
@@ -117,5 +122,12 @@ export async function getPortfolio(wallet: string): Promise<ApiPortfolio> {
 export async function getLeaderboard(): Promise<{ leaderboard: unknown[] }> {
   const res = await fetch(`${API_URL}/api/leaderboard`, { cache: "no-store" });
   if (!res.ok) throw new Error(`getLeaderboard: ${res.status}`);
+  return res.json();
+}
+
+export async function searchMarketByPublicId(publicId: string): Promise<{ market: ApiMarket } | null> {
+  const res = await fetch(`${API_URL}/api/markets/${encodeURIComponent(publicId.toUpperCase())}`, { cache: "no-store" });
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`searchMarketByPublicId: ${res.status}`);
   return res.json();
 }

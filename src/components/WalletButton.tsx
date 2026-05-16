@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { createPortal } from "react-dom";
 import { useAccount, useConnect, useDisconnect, useWalletClient } from "wagmi";
 import { injected } from "wagmi/connectors";
 import { useVDNBalance } from "@/hooks/useVDNToken";
@@ -50,11 +52,26 @@ function AddVDNButton() {
 // ── Custodial user pill ───────────────────────────────────────────────────────
 
 function CustodialUserMenu() {
-  const { user, balance, logout } = useAuth();
+  const { user, balance, logout, isAdmin } = useAuth();
   const { isConnected, address } = useAccount();
   const { connect, connectors } = useConnect();
   const { disconnect } = useDisconnect();
-  const [open, setOpen] = useState(false);
+  const [open,    setOpen]    = useState(false);
+  const [closing, setClosing] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const pathname = usePathname();
+
+  useEffect(() => { setMounted(true); }, []);
+  useEffect(() => { setOpen(false); setClosing(false); }, [pathname]);
+  useEffect(() => {
+    document.body.style.overflow = open ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
+  }, [open]);
+
+  const closeSidebar = () => {
+    setClosing(true);
+    setTimeout(() => { setOpen(false); setClosing(false); }, 240);
+  };
 
   if (!user) return null;
   const vdn = balance?.balance_vdn ?? user.balance_vdn;
@@ -65,8 +82,133 @@ function CustodialUserMenu() {
     setOpen(false);
   };
 
+  // ── Sidebar (mobile) ─────────────────────────────────────────────────────────
+  const sidebar = (
+    <div className="fixed inset-0 z-[9999] sm:hidden" onClick={closeSidebar}>
+      <div className={`absolute inset-0 bg-black/70 ${closing ? "animate-backdrop-out" : "animate-backdrop-in"}`} />
+      <div
+        className={`absolute right-0 top-0 h-full w-[280px] bg-background border-l border-border flex flex-col shadow-2xl ${closing ? "animate-slide-out-right" : "animate-slide-in-right"}`}
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 h-14 border-b border-border shrink-0">
+          <div className="flex flex-col leading-none">
+            <span className="text-sm font-bold text-foreground">@{user.username}</span>
+            <span className="text-xs text-accent-light mt-0.5">
+              {vdn.toLocaleString("es", { maximumFractionDigits: 0 })} VDN
+            </span>
+            <span className="text-[10px] text-muted mt-0.5">
+              ≈ ${(vdn * 0.01).toLocaleString("es", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
+            </span>
+          </div>
+          <button
+            onClick={closeSidebar}
+            className="w-9 h-9 flex items-center justify-center rounded-lg text-muted hover:text-foreground transition-colors"
+            aria-label="Cerrar"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Nav */}
+        <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
+          {([
+            { href: "/",            label: "🎯 Mercados" },
+            { href: "/portfolio",   label: "📊 Portfolio" },
+            { href: "/juegos",      label: "🎮 Juegos" },
+          ] as const).map(({ href, label }) => {
+            const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
+            return (
+              <Link key={href} href={href} onClick={() => setOpen(false)}
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors ${
+                  active ? "bg-accent/10 text-accent-light font-semibold" : "text-foreground hover:bg-surface-alt"
+                }`}>
+                {label}
+              </Link>
+            );
+          })}
+
+          <div className="h-px bg-border my-2" />
+
+          {(() => {
+            const active = pathname.startsWith("/crear-mercado");
+            return (
+              <Link href="/crear-mercado" onClick={() => setOpen(false)}
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold border transition-colors ${
+                  active
+                    ? "bg-accent/20 text-accent-light border-accent/40"
+                    : "bg-accent/10 text-accent-light border-accent/20"
+                }`}>
+                ➕ Crear mercado
+              </Link>
+            );
+          })()}
+
+          {([
+            { href: "/mis-mercados", label: "📋 Mis mercados" },
+            { href: "/wallet",       label: "💰 Mi Wallet" },
+          ] as const).map(({ href, label }) => {
+            const active = pathname.startsWith(href);
+            return (
+              <Link key={href} href={href} onClick={() => setOpen(false)}
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors ${
+                  active ? "bg-accent/10 text-accent-light font-semibold" : "text-foreground hover:bg-surface-alt"
+                }`}>
+                {label}
+              </Link>
+            );
+          })}
+
+          {isAdmin && (
+            <>
+              <div className="h-px bg-border my-2" />
+              {(() => {
+                const active = pathname.startsWith("/admin");
+                return (
+                  <Link href="/admin" onClick={() => setOpen(false)}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors ${
+                      active ? "bg-accent/10 text-accent-light font-semibold" : "text-foreground hover:bg-surface-alt"
+                    }`}>
+                    ⚙️ Admin
+                  </Link>
+                );
+              })()}
+            </>
+          )}
+
+          <div className="h-px bg-border my-2" />
+
+          {isConnected ? (
+            <button onClick={() => { disconnect(); setOpen(false); }}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-foreground hover:bg-surface-alt transition-colors">
+              <span className="w-2 h-2 rounded-full bg-success shrink-0" />
+              {address?.slice(0, 6)}…{address?.slice(-4)}
+              <span className="ml-auto text-xs text-muted">Desconectar</span>
+            </button>
+          ) : (
+            <button onClick={handleConnectWallet}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-foreground hover:bg-surface-alt transition-colors">
+              🦊 Conectar wallet
+            </button>
+          )}
+        </nav>
+
+        {/* Cerrar sesión */}
+        <div className="px-3 py-4 border-t border-border">
+          <button onClick={() => { logout(); setOpen(false); }}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-danger hover:bg-danger/10 transition-colors">
+            Cerrar sesión
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="relative">
+      {/* Trigger button */}
       <button
         onClick={() => setOpen(o => !o)}
         className="flex items-center gap-2 px-3 py-2 rounded-lg bg-surface-alt border border-border hover:border-accent transition-colors"
@@ -75,7 +217,7 @@ function CustodialUserMenu() {
           <span className="text-xs font-semibold text-foreground">{user.username}</span>
           <span className="text-[10px] text-accent-light">
             {vdn.toLocaleString("es", { maximumFractionDigits: 0 })} VDN
-            <span className="text-muted ml-1">(${(vdn * 0.01).toLocaleString("es", { minimumFractionDigits: 2, maximumFractionDigits: 2 })})</span>
+            <span className="text-muted ml-1 hidden sm:inline">(${(vdn * 0.01).toLocaleString("es", { minimumFractionDigits: 2, maximumFractionDigits: 2 })})</span>
           </span>
         </div>
         <svg className={`w-3 h-3 text-muted transition-transform ${open ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -83,36 +225,43 @@ function CustodialUserMenu() {
         </svg>
       </button>
 
+      {/* Mobile: sidebar via portal */}
+      {mounted && open && createPortal(sidebar, document.body)}
+
+      {/* Desktop: dropdown */}
       {open && (
-        <div className="absolute right-0 top-full mt-1 w-52 rounded-xl bg-surface border border-border shadow-xl z-50 overflow-hidden">
-          <Link href="/wallet" onClick={() => setOpen(false)}
-            className="block px-4 py-2.5 text-sm hover:bg-surface-alt transition-colors text-foreground">
-            💰 Mi Wallet
-          </Link>
-          <Link href="/portfolio" onClick={() => setOpen(false)}
-            className="block px-4 py-2.5 text-sm hover:bg-surface-alt transition-colors text-foreground">
-            📊 Portfolio
-          </Link>
-          <div className="border-t border-border" />
-          {isConnected ? (
-            <button onClick={() => { disconnect(); setOpen(false); }}
-              className="w-full text-left px-4 py-2.5 text-sm hover:bg-surface-alt transition-colors text-foreground flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-success shrink-0" />
-              {address?.slice(0, 6)}…{address?.slice(-4)}
-              <span className="ml-auto text-xs text-muted">Desconectar</span>
+        <>
+          <div className="hidden sm:block fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div className="hidden sm:block absolute right-0 top-full mt-1 w-52 rounded-xl bg-surface border border-border shadow-xl z-50 overflow-hidden">
+            <Link href="/wallet" onClick={() => setOpen(false)}
+              className="flex items-center gap-2.5 px-4 py-2.5 text-sm hover:bg-surface-alt transition-colors text-foreground">
+              💰 Mi Wallet
+            </Link>
+            <Link href="/portfolio" onClick={() => setOpen(false)}
+              className="flex items-center gap-2.5 px-4 py-2.5 text-sm hover:bg-surface-alt transition-colors text-foreground">
+              📊 Portfolio
+            </Link>
+            <div className="border-t border-border" />
+            {isConnected ? (
+              <button onClick={() => { disconnect(); setOpen(false); }}
+                className="w-full text-left px-4 py-2.5 text-sm hover:bg-surface-alt transition-colors text-foreground flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-success shrink-0" />
+                {address?.slice(0, 6)}…{address?.slice(-4)}
+                <span className="ml-auto text-xs text-muted">Desconectar</span>
+              </button>
+            ) : (
+              <button onClick={handleConnectWallet}
+                className="w-full text-left px-4 py-2.5 text-sm hover:bg-surface-alt transition-colors text-foreground flex items-center gap-2">
+                🦊 Conectar wallet
+              </button>
+            )}
+            <div className="border-t border-border" />
+            <button onClick={() => { logout(); setOpen(false); }}
+              className="w-full text-left px-4 py-2.5 text-sm text-danger hover:bg-danger/10 transition-colors">
+              Cerrar sesión
             </button>
-          ) : (
-            <button onClick={handleConnectWallet}
-              className="w-full text-left px-4 py-2.5 text-sm hover:bg-surface-alt transition-colors text-foreground flex items-center gap-2">
-              🦊 Conectar wallet
-            </button>
-          )}
-          <div className="border-t border-border" />
-          <button onClick={() => { logout(); setOpen(false); }}
-            className="w-full text-left px-4 py-2.5 text-sm text-danger hover:bg-danger/10 transition-colors">
-            Cerrar sesión
-          </button>
-        </div>
+          </div>
+        </>
       )}
     </div>
   );
