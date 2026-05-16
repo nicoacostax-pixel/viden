@@ -1,4 +1,4 @@
-const CACHE_NAME = 'viden-v1';
+const CACHE_NAME = 'viden-v2';
 const STATIC_ASSETS = ['/', '/offline.html'];
 
 self.addEventListener('install', (event) => {
