@@ -811,7 +811,7 @@ export default function MarketDetail() {
       {/* Pool volume */}
       <div className="grid grid-cols-3 gap-3 mb-4 text-center">
         {[
-          { label: "Pool total", value: `${fmt0((custodialMkt.custodialPoolYes ?? 0) + (custodialMkt.custodialPoolNo ?? 0) + 2000)} VDN` },
+          { label: "Pool total", value: `${fmt0(lmsrPrice?.pool_total_vdn ?? 2000)} VDN` },
           { label: "Shares SÍ", value: fmt2(qYes) },
           { label: "Shares NO", value: fmt2(qNo)  },
         ].map(({ label, value }) => (

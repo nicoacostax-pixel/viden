@@ -210,15 +210,18 @@ export async function apiClaimBet(token: string, bet_id: number) {
 // ── Market price & orderbook ───────────────────────────────────────────────────
 
 export type MarketPrice = {
-  market_id:       number;
-  price_yes:       number;
-  price_no:        number;
-  pct_yes:         number;
-  pct_no:          number;
+  market_id:        number;
+  price_yes:        number;
+  price_no:         number;
+  pct_yes:          number;
+  pct_no:           number;
   implied_prob_yes: number;
-  shares_yes:      number;
-  shares_no:       number;
-  timestamp:       number;
+  shares_yes:       number;
+  shares_no:        number;
+  pool_yes_vdn:     number;
+  pool_no_vdn:      number;
+  pool_total_vdn:   number;
+  timestamp:        number;
 };
 
 export async function apiGetMarketPrice(market_id: number) {
