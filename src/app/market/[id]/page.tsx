@@ -424,11 +424,9 @@ function LmsrTradingPanel({
                       {fmt2(gross)} apostado
                     </span>
                     <span className="text-muted">+</span>
-                    <span className={`px-2.5 py-1 rounded-lg font-semibold tabular-nums ${
-                      isProfit
-                        ? "bg-success/10 border border-success/20 text-success"
-                        : "bg-danger/10 border border-danger/20 text-danger"
-                    }`}>
+                    <span className={`px-2.5 py-1 rounded-lg font-semibold tabular-nums border ${
+                      side === "yes" ? "bg-success/10 border-success/20" : "bg-danger/10 border-danger/20"
+                    } ${isProfit ? "text-success" : "text-danger"}`}>
                       {isProfit ? "+" : ""}{fmt2(profit)} ganancia
                     </span>
                     <span className="text-muted text-xs ml-auto">
