@@ -6,6 +6,9 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { apiDeposit, apiCreatePaymentIntent, apiConfirmPayment, apiStripeConfirm, ApiError, type DepositResult } from "@/lib/custodialApi";
+import { DailyStreak } from "@/components/DailyStreak";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
 const VDN_PRICE = 0.01;
 
@@ -332,6 +335,8 @@ function WalletInner() {
   const [successResult,    setSuccessResult]     = useState<DepositResult | null>(null);
   const [cancelBanner,     setCancelBanner]      = useState(false);
   const [showInstallBonus, setShowInstallBonus]  = useState(false);
+  const [referralInfo,     setReferralInfo]      = useState<{ referral_code: string; referral_count: number } | null>(null);
+  const [refCopied,        setRefCopied]         = useState(false);
 
   useEffect(() => {
     if (!isLoading && !isLoggedIn) router.push("/login");
@@ -344,6 +349,15 @@ function WalletInner() {
       setShowInstallBonus(!claimed);
     }
   }, [isLoggedIn]);
+
+  // Load referral info
+  useEffect(() => {
+    if (!token || !isLoggedIn) return;
+    fetch(`${API_URL}/api/users/referral`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json())
+      .then(setReferralInfo)
+      .catch(() => {});
+  }, [token, isLoggedIn]);
 
   // After Stripe redirect: confirm payment and credit VDN
   useEffect(() => {
@@ -441,29 +455,52 @@ function WalletInner() {
         </div>
       </div>
 
+      {/* Racha diaria */}
+      <DailyStreak />
+
       {/* Quick links */}
-      <div className="flex gap-3">
-        <Link href="/" className="flex-1 py-3 rounded-xl bg-surface border border-border text-sm text-center font-medium hover:border-accent transition-colors text-foreground">
-          🎯 Ver Mercados
+      <div className="grid grid-cols-3 gap-2">
+        <Link href="/" className="py-3 rounded-xl bg-surface border border-border text-xs text-center font-medium hover:border-accent transition-colors text-foreground">
+          🎯 Mercados
         </Link>
-        <Link href="/portfolio" className="flex-1 py-3 rounded-xl bg-surface border border-border text-sm text-center font-medium hover:border-accent transition-colors text-foreground">
+        <Link href="/portfolio" className="py-3 rounded-xl bg-surface border border-border text-xs text-center font-medium hover:border-accent transition-colors text-foreground">
           📊 Portfolio
+        </Link>
+        <Link href={`/u/${user.username}`} className="py-3 rounded-xl bg-surface border border-border text-xs text-center font-medium hover:border-accent transition-colors text-foreground">
+          👤 Mi perfil
         </Link>
       </div>
 
       {/* Referral */}
-      <div className="p-4 rounded-xl bg-surface border border-border">
-        <p className="text-xs text-muted mb-2">Tu código de referido</p>
-        <div className="flex items-center gap-3">
-          <code className="text-lg font-black text-accent-light tracking-widest">{user.referral_code}</code>
-          <button
-            onClick={() => navigator.clipboard.writeText(user.referral_code)}
-            className="text-xs text-muted hover:text-foreground border border-border px-2 py-1 rounded-md transition-colors">
-            Copiar
-          </button>
+      {referralInfo && (
+        <div className="p-5 rounded-2xl bg-surface border border-border space-y-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-bold text-foreground">🔗 Invita amigos</p>
+              <p className="text-xs text-muted">Tú y tu amigo reciben 200 VDN cada uno</p>
+            </div>
+            {referralInfo.referral_count > 0 && (
+              <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-success/10 text-success border border-success/20">
+                {referralInfo.referral_count} referido{referralInfo.referral_count !== 1 ? "s" : ""}
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-2 p-3 rounded-xl bg-background border border-border">
+            <code className="flex-1 text-sm text-accent-light font-mono truncate">
+              {typeof window !== "undefined" ? `${window.location.origin}/registro?ref=${referralInfo.referral_code}` : `viden.app/registro?ref=${referralInfo.referral_code}`}
+            </code>
+            <button
+              onClick={() => {
+                const url = `${window.location.origin}/registro?ref=${referralInfo.referral_code}`;
+                if (navigator.share) navigator.share({ title: "Únete a Viden", url });
+                else { navigator.clipboard.writeText(url); setRefCopied(true); setTimeout(() => setRefCopied(false), 2000); }
+              }}
+              className="shrink-0 text-xs font-semibold px-3 py-1.5 rounded-lg bg-accent text-white hover:bg-accent-hover transition-colors">
+              {refCopied ? "✓ Copiado" : "Compartir"}
+            </button>
+          </div>
         </div>
-        <p className="text-xs text-muted mt-1">Comparte — tú y tu referido reciben 200 VDN extra</p>
-      </div>
+      )}
 
       {/* Cancelled banner */}
       {cancelBanner && (
