@@ -84,13 +84,16 @@ export default function PWAManager() {
   };
 
   useEffect(() => {
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
-          .then(reg => console.log('SW registrado:', reg.scope))
-          .catch(err => console.log('SW error:', err));
-      });
-    }
+    if (!('serviceWorker' in navigator)) return;
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js')
+        .then(reg => console.log('SW registrado:', reg.scope))
+        .catch(err => console.log('SW error:', err));
+    });
+    // Recargar cuando el SW nuevo tome el control (limpia caché viejo)
+    navigator.serviceWorker.addEventListener('message', (e) => {
+      if (e.data?.type === 'SW_UPDATED') window.location.reload();
+    });
   }, []);
 
   if (!showBanner || isInstalled) return null;
