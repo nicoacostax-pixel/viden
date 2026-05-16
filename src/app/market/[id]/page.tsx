@@ -401,7 +401,7 @@ function LmsrTradingPanel({
                 <div className={`rounded-xl p-4 border ${
                   side === "yes" ? "bg-success/5 border-success/20" : "bg-danger/5 border-danger/20"
                 }`}>
-                  <div className="text-xs text-muted mb-1">Pago si {side === "yes" ? "SÍ" : "NO"} gana</div>
+                  <div className="text-xs text-muted mb-1">Pago si &ldquo;{side === "yes" ? "SÍ" : "NO"}&rdquo; gana</div>
                   <div className={`text-3xl font-black tabular-nums ${side === "yes" ? "text-success" : "text-danger"}`}>
                     {fmt2(payout)} VDN
                   </div>
