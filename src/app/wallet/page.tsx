@@ -227,10 +227,10 @@ function DepositModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: 
             className="w-full pl-8 pr-4 py-3 rounded-lg bg-background border border-border text-foreground placeholder:text-muted focus:outline-none focus:border-accent transition-colors text-lg font-semibold"
           />
         </div>
-        <div className="flex gap-2 mt-2">
+        <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 mt-2">
           {[5, 10, 25, 50, 100].map(v => (
             <button key={v} onClick={() => setAmount(String(v))}
-              className={`flex-1 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${
+              className={`py-2 rounded-lg text-xs font-semibold border transition-colors ${
                 amount === String(v)
                   ? "border-accent text-accent bg-accent/5"
                   : "border-border hover:border-accent text-muted hover:text-foreground"
@@ -328,13 +328,22 @@ function WalletInner() {
   const router       = useRouter();
   const searchParams = useSearchParams();
 
-  const [showDeposit,   setShowDeposit]   = useState(false);
-  const [successResult, setSuccessResult] = useState<DepositResult | null>(null);
-  const [cancelBanner,  setCancelBanner]  = useState(false);
+  const [showDeposit,      setShowDeposit]      = useState(false);
+  const [successResult,    setSuccessResult]     = useState<DepositResult | null>(null);
+  const [cancelBanner,     setCancelBanner]      = useState(false);
+  const [showInstallBonus, setShowInstallBonus]  = useState(false);
 
   useEffect(() => {
     if (!isLoading && !isLoggedIn) router.push("/login");
   }, [isLoading, isLoggedIn, router]);
+
+  // Show install bonus card if not yet claimed
+  useEffect(() => {
+    if (isLoggedIn && typeof window !== 'undefined') {
+      const claimed = localStorage.getItem('install_bonus_claimed');
+      setShowInstallBonus(!claimed);
+    }
+  }, [isLoggedIn]);
 
   // After Stripe redirect: confirm payment and credit VDN
   useEffect(() => {
@@ -376,6 +385,20 @@ function WalletInner() {
         <h1 className="text-2xl font-bold text-foreground">Mi Wallet</h1>
         <span className="text-sm text-muted">@{user.username}</span>
       </div>
+
+      {/* Install bonus card */}
+      {showInstallBonus && (
+        <div style={{ background: 'linear-gradient(135deg, #4F46E5, #7C3AED)', borderRadius: '16px', padding: '20px', display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+          <span style={{ fontSize: '36px' }}>🎁</span>
+          <div style={{ flex: 1 }}>
+            <div style={{ color: 'white', fontWeight: 'bold', fontSize: '16px' }}>500 VDN esperándote</div>
+            <div style={{ color: '#C4B5FD', fontSize: '13px' }}>Instala Viden como app · Valor: $5.00 USD · Solo una vez</div>
+          </div>
+          <button onClick={() => window.dispatchEvent(new Event('pwa-install-trigger'))} style={{ background: '#10B981', color: 'white', border: 'none', borderRadius: '10px', padding: '10px 14px', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer' }}>
+            📲 Instalar
+          </button>
+        </div>
+      )}
 
       {/* VDN balance card */}
       <div className="p-6 rounded-2xl bg-surface border border-border">

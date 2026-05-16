@@ -9,6 +9,7 @@ import {
 } from "recharts";
 import { MarketCard, getCategoryEmoji } from "@/components/MarketCard";
 import { getMarkets, toMarketData, searchMarketByPublicId, type ApiMarket } from "@/lib/api";
+import { apiGetPriceHistory, type PriceHistoryPoint } from "@/lib/custodialApi";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -46,20 +47,28 @@ function matchCategory(m: ApiMarket): CategoryId {
   return "all";
 }
 
+const LMSR_B = 2000 / Math.LN2;
+
+function lmsrPrice(sharesYes: number, sharesNo: number) {
+  const ry = sharesYes / LMSR_B;
+  const rn = sharesNo  / LMSR_B;
+  const mx = Math.max(ry, rn);
+  const ey = Math.exp(ry - mx);
+  const en = Math.exp(rn - mx);
+  const sum = ey + en;
+  return { yes: Math.round(ey / sum * 100), no: Math.round(en / sum * 100) };
+}
+
 function custProb(m: ApiMarket) {
-  const y = m.custodialPoolYes ?? 0;
-  const n = m.custodialPoolNo ?? 0;
-  const total = y + n;
-  if (total === 0) return { yes: 50, no: 50, total: 0 };
-  return { yes: Math.round((y / total) * 100), no: Math.round((n / total) * 100), total };
+  const prob = lmsrPrice(m.sharesYes ?? 0, m.sharesNo ?? 0);
+  const total = (m.custodialPoolYes ?? 0) + (m.custodialPoolNo ?? 0);
+  return { yes: prob.yes, no: prob.no, total };
 }
 
 function custMult(m: ApiMarket) {
-  const y = m.custodialPoolYes ?? 0;
-  const n = m.custodialPoolNo ?? 0;
-  const total = y + n;
-  if (total === 0 || y === 0 || n === 0) return { si: "2.00", no: "2.00" };
-  return { si: (total / y).toFixed(2), no: (total / n).toFixed(2) };
+  const { yes, no } = lmsrPrice(m.sharesYes ?? 0, m.sharesNo ?? 0);
+  if (yes <= 0 || no <= 0) return { si: "2.00", no: "2.00" };
+  return { si: (100 / yes).toFixed(2), no: (100 / no).toFixed(2) };
 }
 
 function seedRng(seed: number) {
@@ -96,14 +105,28 @@ function fmtTs(ts: number) {
 // ── CarouselCard ──────────────────────────────────────────────────────────────
 
 function CarouselCard({ market, fading }: { market: ApiMarket; fading: boolean }) {
-  const prob      = custProb(market);
-  const mult      = custMult(market);
-  const chartData = useMemo(
-    () => makeChartData(market.marketId, prob.yes, market.closeTime),
-    [market.marketId, prob.yes, market.closeTime],
-  );
-  const emoji   = market.emoji || getCategoryEmoji(market.question);
-  const lastPt  = chartData[chartData.length - 1];
+  const prob  = custProb(market);
+  const mult  = custMult(market);
+  const emoji = market.emoji || getCategoryEmoji(market.question, market.category);
+
+  const [history, setHistory] = useState<PriceHistoryPoint[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    apiGetPriceHistory(market.marketId)
+      .then(d => { if (!cancelled) setHistory(d.history); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [market.marketId]);
+
+  const chartData = useMemo(() => {
+    if (history.length >= 2) {
+      return history.map(p => ({ ts: p.timestamp, v: Math.round(p.price_yes * 100) }));
+    }
+    return makeChartData(market.marketId, prob.yes, market.closeTime);
+  }, [history, market.marketId, prob.yes, market.closeTime]);
+
+  const lastPt = chartData[chartData.length - 1];
 
   return (
     <Link href={`/market/${market.marketId}`} className="block cursor-pointer">
@@ -137,6 +160,7 @@ function CarouselCard({ market, fading }: { market: ApiMarket; fading: boolean }
             <span className="w-2 h-2 rounded-full bg-success animate-pulse shrink-0" />
             <span className="text-xs text-success font-semibold">{prob.yes}% SÍ</span>
           </div>
+          <div style={{ pointerEvents: 'none' }}>
           <ResponsiveContainer width="100%" height={150}>
             <LineChart data={chartData} margin={{ top: 6, right: 44, bottom: 4, left: 0 }}>
               <CartesianGrid
@@ -182,6 +206,7 @@ function CarouselCard({ market, fading }: { market: ApiMarket; fading: boolean }
               />
             </LineChart>
           </ResponsiveContainer>
+          </div>
         </div>
 
         {/* Odds + volume */}
@@ -232,7 +257,7 @@ function TrendingSidebar({
       <div className="flex-1 divide-y divide-border/40 overflow-y-auto">
         {featured.map((m, i) => {
           const { yes } = custProb(m);
-          const emoji   = m.emoji || getCategoryEmoji(m.question);
+          const emoji   = m.emoji || getCategoryEmoji(m.question, m.category);
           const active  = i === activeIdx;
           return (
             <button
@@ -409,7 +434,7 @@ function StatPill({ label, value }: { label: string; value: string }) {
 
 function SidebarMarketItem({ market }: { market: ApiMarket }) {
   const { yes }  = custProb(market);
-  const emoji    = market.emoji || getCategoryEmoji(market.question);
+  const emoji    = market.emoji || getCategoryEmoji(market.question, market.category);
   const short    = market.question.length > 60
     ? market.question.slice(0, 60) + "…"
     : market.question;
@@ -517,7 +542,7 @@ export default function Home() {
 
   useEffect(() => {
     load(true);
-    const id = setInterval(() => load(false), 30_000);
+    const id = setInterval(() => load(false), 10_000);
     return () => clearInterval(id);
   }, [load]);
 
@@ -650,7 +675,7 @@ export default function Home() {
             ) : (
               <div className={`grid gap-3 sm:grid-cols-2 transition-opacity duration-300 ${refreshing ? "opacity-60" : ""}`}>
                 {displayedMarkets.map(m => (
-                  <MarketCard key={String(m.marketId)} market={toMarketData(m)} publicId={m.publicId} />
+                  <MarketCard key={String(m.marketId)} market={toMarketData(m)} publicId={m.publicId} apiMarket={m} />
                 ))}
               </div>
             )}

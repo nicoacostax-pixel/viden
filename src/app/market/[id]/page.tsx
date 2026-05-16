@@ -22,6 +22,10 @@ import {
   type Comment, type TopHolder, type ActivityItem,
 } from "@/lib/custodialApi";
 import { getMarket, type ApiMarket } from "@/lib/api";
+import {
+  LineChart, Line, CartesianGrid, XAxis, YAxis,
+  ResponsiveContainer, ReferenceDot,
+} from "recharts";
 
 const VDN_PRICE_USD = 0.01;
 
@@ -136,41 +140,79 @@ function PriceBar({ pctYes, pctNo }: { pctYes: number; pctNo: number }) {
 
 // ─── LMSR Price chart ─────────────────────────────────────────────────────────
 
+function fmtTs(ts: number) {
+  return new Date(ts * 1000).toLocaleTimeString("es", {
+    hour: "2-digit", minute: "2-digit", hour12: false,
+  });
+}
+
 function PriceChart({ history }: { history: PriceHistoryPoint[] }) {
-  if (history.length < 2) return (
-    <p className="text-xs text-muted text-center py-3">Más operaciones mostrarán el gráfico</p>
+  const pts = (() => {
+    if (history.length === 0) return [];
+    // need at least 2 points to draw a line — duplicate if only 1
+    const base = history.length === 1
+      ? [history[0], { ...history[0], timestamp: history[0].timestamp + 60 }]
+      : history;
+    return base.map(p => ({ ts: p.timestamp, v: Math.round(p.price_yes * 100) }));
+  })();
+
+  if (pts.length === 0) return (
+    <p className="text-xs text-muted text-center py-4">Aún no hay historial</p>
   );
 
-  const W = 400, H = 70, PAD = 4;
-  const minT = history[0].timestamp, maxT = history[history.length - 1].timestamp;
-  const rangeT = maxT - minT || 1;
-
-  const pts = history.map(p => ({
-    x: PAD + ((p.timestamp - minT) / rangeT) * (W - PAD * 2),
-    y: PAD + (1 - p.price_yes) * (H - PAD * 2),
-  }));
-
-  const line = pts.map((p, i) => `${i === 0 ? "M" : "L"}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
-  const fill = `${line} L${(W - PAD).toFixed(1)},${(H - PAD).toFixed(1)} L${PAD},${(H - PAD).toFixed(1)} Z`;
-
-  const currentPct = (history[history.length - 1].price_yes * 100).toFixed(1);
+  const lastPt   = pts[pts.length - 1];
+  const currentPct = lastPt.v.toFixed(1);
 
   return (
-    <div className="rounded-xl bg-background border border-border p-3">
-      <div className="flex justify-between text-xs text-muted mb-2">
+    <div className="rounded-xl bg-background border border-border p-4">
+      <div className="flex justify-between text-xs text-muted mb-3">
         <span>Probabilidad SÍ</span>
         <span className="text-success font-semibold">{currentPct}%</span>
       </div>
-      <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: 60 }} preserveAspectRatio="none">
-        <defs>
-          <linearGradient id="lmsrGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#10B981" stopOpacity="0.25" />
-            <stop offset="100%" stopColor="#10B981" stopOpacity="0" />
-          </linearGradient>
-        </defs>
-        <path d={fill} fill="url(#lmsrGrad)" />
-        <path d={line} fill="none" stroke="#10B981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
+      <ResponsiveContainer width="100%" height={180}>
+        <LineChart data={pts} margin={{ top: 6, right: 44, bottom: 4, left: 0 }}>
+          <CartesianGrid
+            stroke="rgba(0,0,0,0.06)"
+            strokeDasharray="3 4"
+            vertical={false}
+          />
+          <XAxis
+            dataKey="ts"
+            tickFormatter={fmtTs}
+            tick={{ fill: "#9CA3AF", fontSize: 9 }}
+            tickLine={false}
+            axisLine={false}
+            interval="preserveStartEnd"
+            tickCount={4}
+          />
+          <YAxis
+            orientation="right"
+            domain={[0, 100]}
+            ticks={[20, 40, 60, 80, 100]}
+            tickFormatter={v => `${v}%`}
+            tick={{ fill: "#9CA3AF", fontSize: 9 }}
+            tickLine={false}
+            axisLine={false}
+            width={34}
+          />
+          <Line
+            type="monotone"
+            dataKey="v"
+            stroke="#10B981"
+            strokeWidth={2}
+            dot={false}
+            isAnimationActive={false}
+          />
+          <ReferenceDot
+            x={lastPt.ts}
+            y={lastPt.v}
+            r={4}
+            fill="#10B981"
+            stroke="#10B981"
+            strokeWidth={0}
+          />
+        </LineChart>
+      </ResponsiveContainer>
     </div>
   );
 }

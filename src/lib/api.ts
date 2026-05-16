@@ -21,6 +21,8 @@ export type ApiMarket = {
   emoji: string | null;
   custodialPoolYes: number;
   custodialPoolNo: number;
+  sharesYes: number;
+  sharesNo: number;
   isUserCreated: boolean;
   statusReview: string | null;
   resolutionCriteria: string | null;

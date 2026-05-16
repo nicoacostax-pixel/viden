@@ -252,21 +252,21 @@ function SnakeCanvas({ onGameOver }: SnakeCanvasProps) {
         className="rounded-xl border border-border touch-none"
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
-        style={{ maxWidth: "100%", imageRendering: "pixelated" }}
+        style={{ maxWidth: "min(85vw, 400px)", maxHeight: "min(85vw, 400px)", imageRendering: "pixelated" }}
       />
 
-      {/* D-pad */}
-      <div className="grid grid-cols-3 gap-1.5 sm:hidden">
+      {/* D-pad — visible on mobile */}
+      <div className="grid grid-cols-3 gap-2 sm:hidden" style={{ gridTemplateRows: "repeat(3, 60px)" }}>
         {[
-          { label: "▲", dir: { x: 0, y: -1 }, col: "col-start-2" },
+          { label: "▲", dir: { x: 0, y: -1 }, col: "col-start-2 row-start-1" },
           { label: "◀", dir: { x: -1, y: 0 }, col: "col-start-1 row-start-2" },
           { label: "▶", dir: { x: 1, y: 0 },  col: "col-start-3 row-start-2" },
           { label: "▼", dir: { x: 0, y: 1 },  col: "col-start-2 row-start-3" },
         ].map(({ label, dir, col }) => (
           <button
             key={label}
-            onPointerDown={() => changeDir(dir)}
-            className={`${col} w-12 h-12 rounded-lg bg-surface border border-border text-foreground font-bold text-lg active:bg-accent active:text-white select-none`}
+            onPointerDown={e => { e.preventDefault(); changeDir(dir); }}
+            className={`${col} w-[60px] h-[60px] rounded-xl bg-surface border border-border text-foreground font-bold text-xl active:bg-accent active:text-white select-none touch-manipulation`}
           >
             {label}
           </button>
