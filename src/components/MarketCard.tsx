@@ -70,7 +70,7 @@ export function MarketCard({ market, publicId, apiMarket }: {
   apiMarket?: ApiMarket;
 }) {
   const { toggle, has } = useWatchlist();
-  const watched = has(market.marketId);
+  const watched = has(Number(market.marketId));
   const chainProb = getProbability(market.totalPoolYes, market.totalPoolNo);
   const lmsr = apiMarket && (apiMarket.sharesYes > 0 || apiMarket.sharesNo > 0)
     ? lmsrProb(apiMarket.sharesYes, apiMarket.sharesNo)
@@ -138,7 +138,7 @@ export function MarketCard({ market, publicId, apiMarket }: {
               <span className="text-[11px] text-muted">Cerrado</span>
             )}
             <button
-              onClick={e => { e.preventDefault(); e.stopPropagation(); toggle(market.marketId); }}
+              onClick={e => { e.preventDefault(); e.stopPropagation(); toggle(Number(market.marketId)); }}
               className={`text-base leading-none transition-colors ${watched ? "text-warning" : "text-muted/40 hover:text-warning"}`}
               aria-label="Guardar"
             >
