@@ -370,41 +370,52 @@ function LmsrTradingPanel({
               }`} />
           </div>
 
-          {gross > 0 && (
-            <div className="rounded-lg bg-background border border-border p-3 space-y-1.5 text-xs">
-              <div className="flex justify-between font-semibold text-sm mb-2">
-                <span>Shares que recibirás</span>
-                <span className={side === "yes" ? "text-success" : "text-danger"}>{fmt2(received)} shares</span>
+          {gross > 0 && (() => {
+            const payout  = received;          // total VDN cobras si ganas
+            const profit  = received - gross;  // ganancia neta
+            const roi     = gross > 0 ? (profit / gross) * 100 : 0;
+            const isProfit = profit > 0;
+            return (
+              <div className="space-y-2">
+                {/* Pago potencial — destacado */}
+                <div className={`rounded-xl p-4 border ${
+                  side === "yes" ? "bg-success/5 border-success/20" : "bg-danger/5 border-danger/20"
+                }`}>
+                  <div className="text-xs text-muted mb-1">Pago si {side === "yes" ? "SÍ" : "NO"} gana</div>
+                  <div className={`text-3xl font-black tabular-nums ${side === "yes" ? "text-success" : "text-danger"}`}>
+                    {fmt2(payout)} VDN
+                  </div>
+                  <div className={`text-sm font-semibold mt-1 ${isProfit ? "text-success" : "text-danger"}`}>
+                    {isProfit ? "+" : ""}{fmt2(profit)} VDN &nbsp;
+                    <span className="text-xs font-medium opacity-75">
+                      ({isProfit ? "+" : ""}{roi.toFixed(1)}% retorno)
+                    </span>
+                  </div>
+                </div>
+
+                {/* Desglose compacto */}
+                <div className="rounded-lg bg-background border border-border px-3 py-2 space-y-1 text-xs text-muted">
+                  <div className="flex justify-between">
+                    <span>Shares recibidos</span>
+                    <span className="text-foreground font-medium">{fmt2(received)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Precio promedio</span>
+                    <span className="text-foreground">{(avgPrice * 100).toFixed(1)}%</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Precio {side === "yes" ? "SÍ" : "NO"} después</span>
+                    <span className="text-foreground">{((side === "yes" ? pYesAfter : pNoAfter) * 100).toFixed(1)}%</span>
+                  </div>
+                  <div className="h-px bg-border" />
+                  <div className="flex justify-between">
+                    <span>🔥 Quema (2%) + 🏦 Fee (2%)</span>
+                    <span className="text-warning">−{fmt2(burned + fee)} VDN</span>
+                  </div>
+                </div>
               </div>
-              <div className="flex justify-between text-muted">
-                <span>Precio promedio por share</span>
-                <span className="text-foreground">{(avgPrice * 100).toFixed(2)}%</span>
-              </div>
-              <div className="flex justify-between text-muted">
-                <span>Precio {side === "yes" ? "SÍ" : "NO"} después</span>
-                <span className="text-foreground">{((side === "yes" ? pYesAfter : pNoAfter) * 100).toFixed(2)}%</span>
-              </div>
-              <div className="flex justify-between text-muted">
-                <span>Ganancia si acierta</span>
-                <span className={potentialGain > 0 ? "text-success" : "text-foreground"}>
-                  {potentialGain > 0 ? "+" : ""}{fmt2(potentialGain)} VDN
-                </span>
-              </div>
-              <div className="h-px bg-border my-1" />
-              <div className="flex justify-between text-muted">
-                <span>🔥 Quema (2%)</span>
-                <span className="text-danger">−{fmt2(burned)} VDN</span>
-              </div>
-              <div className="flex justify-between text-muted">
-                <span>🏦 Treasury (2%)</span>
-                <span className="text-warning">−{fmt2(fee)} VDN</span>
-              </div>
-              <div className="flex justify-between font-medium border-t border-border pt-1">
-                <span>Va al pool</span>
-                <span className="text-success">+{fmt2(net)} VDN</span>
-              </div>
-            </div>
-          )}
+            );
+          })()}
 
           <button onClick={handleBuy}
             disabled={loading || gross <= 0 || gross > vdnBalance}
