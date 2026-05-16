@@ -4,7 +4,8 @@ import Link from "next/link";
 import { MarketData, formatVDN, getProbability, getOutcomeLabel } from "@/hooks/usePredictionMarket";
 import { Outcome } from "@/config/contracts";
 import type { ApiMarket } from "@/lib/api";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useWatchlist } from "@/hooks/useWatchlist";
 
 const LMSR_B = 2000 / Math.LN2;
 const LMSR_INITIAL = 2000;
@@ -68,6 +69,8 @@ export function MarketCard({ market, publicId, apiMarket }: {
   publicId?: string | null;
   apiMarket?: ApiMarket;
 }) {
+  const { toggle, has } = useWatchlist();
+  const watched = has(market.marketId);
   const chainProb = getProbability(market.totalPoolYes, market.totalPoolNo);
   const lmsr = apiMarket && (apiMarket.sharesYes > 0 || apiMarket.sharesNo > 0)
     ? lmsrProb(apiMarket.sharesYes, apiMarket.sharesNo)
@@ -134,6 +137,13 @@ export function MarketCard({ market, publicId, apiMarket }: {
             {closed && isOpen && (
               <span className="text-[11px] text-muted">Cerrado</span>
             )}
+            <button
+              onClick={e => { e.preventDefault(); e.stopPropagation(); toggle(market.marketId); }}
+              className={`text-base leading-none transition-colors ${watched ? "text-warning" : "text-muted/40 hover:text-warning"}`}
+              aria-label="Guardar"
+            >
+              {watched ? "★" : "☆"}
+            </button>
           </div>
         </div>
       </div>

@@ -10,11 +10,13 @@ import {
 import { MarketCard, getCategoryEmoji } from "@/components/MarketCard";
 import { getMarkets, toMarketData, searchMarketByPublicId, type ApiMarket } from "@/lib/api";
 import { apiGetPriceHistory, type PriceHistoryPoint } from "@/lib/custodialApi";
+import { useWatchlist } from "@/hooks/useWatchlist";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const CATEGORIES = [
   { id: "all",             label: "Tendencia" },
+  { id: "favoritos",       label: "★ Favoritos" },
   { id: "deportes",        label: "Deportes" },
   { id: "cripto",          label: "Cripto" },
   { id: "politica",        label: "Política" },
@@ -523,6 +525,7 @@ export default function Home() {
   const [error, setError]                   = useState(false);
   const [activeCategory, setActiveCategory] = useState<CategoryId>("all");
   const [search, setSearch]                 = useState("");
+  const { ids: watchlistIds } = useWatchlist();
 
   const load = useCallback(async (initial = false) => {
     if (initial) setIsLoading(true);
@@ -566,8 +569,9 @@ export default function Home() {
 
   const filteredByCategory = useMemo(() => {
     if (activeCategory === "all") return rawMarkets;
+    if (activeCategory === "favoritos") return rawMarkets.filter(m => watchlistIds.includes(m.marketId));
     return rawMarkets.filter(m => matchCategory(m) === activeCategory);
-  }, [rawMarkets, activeCategory]);
+  }, [rawMarkets, activeCategory, watchlistIds]);
 
   const displayedMarkets = useMemo(() => {
     let list = filteredByCategory;
@@ -663,7 +667,9 @@ export default function Home() {
           <div className="flex-1 min-w-0">
             {displayedMarkets.length === 0 ? (
               <div className="text-center py-20">
-                {search || activeCategory !== "all" ? (
+                {activeCategory === "favoritos" ? (
+                  <p className="text-muted">No tienes favoritos aún.<br /><span className="text-xs mt-1 block">Toca ☆ en cualquier mercado para guardarlo aquí.</span></p>
+                ) : search || activeCategory !== "all" ? (
                   <p className="text-muted">Sin resultados para tu búsqueda.</p>
                 ) : (
                   <>

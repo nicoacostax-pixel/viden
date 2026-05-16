@@ -22,6 +22,7 @@ import {
   type Comment, type TopHolder, type ActivityItem,
 } from "@/lib/custodialApi";
 import { getMarket, type ApiMarket } from "@/lib/api";
+import { useWatchlist } from "@/hooks/useWatchlist";
 import {
   LineChart, Line, CartesianGrid, XAxis, YAxis,
   ResponsiveContainer, ReferenceDot,
@@ -357,10 +358,29 @@ function LmsrTradingPanel({
       {tab === "buy" && (
         <>
           <div>
-            <div className="flex justify-between items-center mb-1">
-              <label className="text-xs text-muted">Cantidad a invertir (VDN)</label>
+            <label className="text-xs text-muted mb-1 block">Cantidad a invertir (VDN)</label>
+            {/* Quick amounts */}
+            <div className="flex gap-2 mb-2">
+              {[50, 100, 500].map(v => (
+                <button key={v} onClick={() => setAmount(String(v))}
+                  disabled={v > vdnBalance}
+                  className={`flex-1 py-1.5 rounded-lg text-xs font-semibold border transition-colors disabled:opacity-30 ${
+                    Number(amount) === v
+                      ? "bg-accent text-white border-accent"
+                      : "bg-surface-alt border-border text-muted hover:text-foreground hover:border-accent/50"
+                  }`}>
+                  {v}
+                </button>
+              ))}
               <button onClick={() => setAmount(String(Math.floor(vdnBalance)))}
-                className="text-xs text-accent-light underline hover:text-accent">MAX</button>
+                disabled={vdnBalance <= 0}
+                className={`flex-1 py-1.5 rounded-lg text-xs font-semibold border transition-colors disabled:opacity-30 ${
+                  Number(amount) === Math.floor(vdnBalance) && vdnBalance > 0
+                    ? "bg-accent text-white border-accent"
+                    : "bg-surface-alt border-border text-muted hover:text-foreground hover:border-accent/50"
+                }`}>
+                MAX
+              </button>
             </div>
             <input type="number" inputMode="decimal" min="0" value={amount}
               onChange={e => setAmount(e.target.value)} onFocus={e => e.target.select()}
@@ -808,6 +828,22 @@ export default function MarketDetail() {
   const pctYes = lmsrPrice?.pct_yes ?? 50;
   const pctNo  = lmsrPrice?.pct_no  ?? 50;
 
+  const { toggle: toggleWatch, has: isWatched } = useWatchlist();
+  const watched = isWatched(numId);
+
+  const [shareCopied, setShareCopied] = useState(false);
+  async function handleShare() {
+    const url  = window.location.href;
+    const text = `${effectiveQuestion} — SÍ ${pctYes}%`;
+    if (navigator.share) {
+      try { await navigator.share({ title: text, text, url }); } catch { /* cancelled */ }
+    } else {
+      await navigator.clipboard.writeText(url);
+      setShareCopied(true);
+      setTimeout(() => setShareCopied(false), 2000);
+    }
+  }
+
   if (custodialLoading)
     return <div className="text-center text-muted py-20">Cargando mercado…</div>;
   if (!custodialMkt)
@@ -829,10 +865,27 @@ export default function MarketDetail() {
         {custodialMkt.publicId && <span className="text-xs font-mono">{custodialMkt.publicId}</span>}
       </div>
 
-      {/* Title */}
-      <h1 className="text-xl sm:text-3xl font-bold text-foreground leading-snug mb-4">
-        {effectiveQuestion}
-      </h1>
+      {/* Title + actions */}
+      <div className="flex items-start gap-3 mb-4">
+        <h1 className="flex-1 text-xl sm:text-3xl font-bold text-foreground leading-snug">
+          {effectiveQuestion}
+        </h1>
+        <div className="flex items-center gap-2 shrink-0 mt-1">
+          <button onClick={() => toggleWatch(numId)} aria-label="Guardar"
+            className={`w-9 h-9 rounded-xl flex items-center justify-center border transition-colors ${
+              watched ? "bg-warning/10 border-warning/40 text-warning" : "bg-surface border-border text-muted hover:text-warning hover:border-warning/40"
+            }`}>
+            {watched ? "★" : "☆"}
+          </button>
+          <button onClick={handleShare} aria-label="Compartir"
+            className="w-9 h-9 rounded-xl flex items-center justify-center border border-border bg-surface text-muted hover:text-foreground hover:border-accent/50 transition-colors">
+            {shareCopied
+              ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+            }
+          </button>
+        </div>
+      </div>
 
       {/* Status bar */}
       <div className="flex flex-wrap items-center gap-3 mb-6">
