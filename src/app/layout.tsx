@@ -7,6 +7,7 @@ import { WalletButton } from "@/components/WalletButton";
 import { WrongNetworkBanner } from "@/components/WrongNetworkBanner";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { NavLinks } from "@/components/NavLinks";
+import { BackButton } from "@/components/BackButton";
 import PWAManager from "@/components/PWAManager";
 import Link from "next/link";
 import Image from "next/image";
@@ -39,6 +40,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-sm">
               <div className="max-w-5xl mx-auto px-3 sm:px-4 py-2.5 flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2 sm:gap-6">
+                  <BackButton />
                   <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
                     <Image src="/icon.png" alt="Viden" width={32} height={32} className="rounded-md" priority />
                     <span className="text-xl font-bold text-foreground">Viden</span>
