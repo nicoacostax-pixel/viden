@@ -2,13 +2,13 @@
 
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   LineChart, Line, CartesianGrid, XAxis, YAxis,
   ResponsiveContainer, ReferenceDot,
 } from "recharts";
 import { MarketCard, getCategoryEmoji } from "@/components/MarketCard";
-import { getMarkets, toMarketData, type ApiMarket } from "@/lib/api";
-import type { MarketData } from "@/hooks/usePredictionMarket";
+import { getMarkets, toMarketData, searchMarketByPublicId, type ApiMarket } from "@/lib/api";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -116,7 +116,7 @@ function CarouselCard({ market, fading }: { market: ApiMarket; fading: boolean }
         }}
       >
         {/* Header */}
-        <div className="px-6 pt-6 pb-3">
+        <div className="px-4 sm:px-6 pt-5 sm:pt-6 pb-3">
           <div className="flex items-center gap-2.5 mb-4">
             <span className="text-3xl leading-none">{emoji}</span>
             {market.category && (
@@ -137,7 +137,7 @@ function CarouselCard({ market, fading }: { market: ApiMarket; fading: boolean }
             <span className="w-2 h-2 rounded-full bg-success animate-pulse shrink-0" />
             <span className="text-xs text-success font-semibold">{prob.yes}% SÍ</span>
           </div>
-          <ResponsiveContainer width="100%" height={120}>
+          <ResponsiveContainer width="100%" height={150}>
             <LineChart data={chartData} margin={{ top: 6, right: 44, bottom: 4, left: 0 }}>
               <CartesianGrid
                 stroke="rgba(255,255,255,0.06)"
@@ -185,8 +185,8 @@ function CarouselCard({ market, fading }: { market: ApiMarket; fading: boolean }
         </div>
 
         {/* Odds + volume */}
-        <div className="px-6 pt-3 pb-6">
-          <div className="grid grid-cols-2 gap-3 mb-4">
+        <div className="px-4 sm:px-6 pt-3 pb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
             <div className="rounded-xl bg-success/10 border border-success/20 px-4 py-3">
               <p className="text-[10px] text-muted mb-1 uppercase tracking-wider font-medium">Paga SÍ</p>
               <p className="text-2xl font-extrabold text-success leading-none">{mult.si}x</p>
@@ -274,6 +274,7 @@ function HeroSection({ markets }: { markets: ApiMarket[] }) {
   const activeIdxRef     = useRef(0);
   const transitioningRef = useRef(false);
   const nextCbRef        = useRef<() => void>(() => {});
+  const swipeTouchRef    = useRef<{ x: number; y: number } | null>(null);
 
   useEffect(() => { activeIdxRef.current = activeIdx; }, [activeIdx]);
 
@@ -315,33 +316,42 @@ function HeroSection({ markets }: { markets: ApiMarket[] }) {
   if (featured.length === 0) return null;
 
   return (
-    <div className="flex gap-5 mb-10">
+    <div className="flex gap-5 mb-10 items-start">
       {/* Carousel — 70% */}
       <div
         className="flex-1 min-w-0"
         onMouseEnter={() => setPaused(true)}
         onMouseLeave={() => setPaused(false)}
+        onTouchStart={e => { swipeTouchRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }; }}
+        onTouchEnd={e => {
+          if (!swipeTouchRef.current) return;
+          const dx = e.changedTouches[0].clientX - swipeTouchRef.current.x;
+          const dy = e.changedTouches[0].clientY - swipeTouchRef.current.y;
+          swipeTouchRef.current = null;
+          if (Math.abs(dy) > Math.abs(dx) || Math.abs(dx) < 30) return;
+          if (dx > 0) prev(); else next();
+        }}
       >
         <div className="relative" style={{ isolation: "isolate" }}>
           <CarouselCard market={featured[activeIdx]} fading={fading} />
 
           {featured.length > 1 && (
-            <div className="absolute right-4 top-4 z-20 flex items-center gap-2 rounded-full border border-border bg-surface/95 px-2 py-1 shadow-lg shadow-black/5 backdrop-blur">
+            <div className="absolute right-3 top-3 z-20 flex items-center gap-1 rounded-full border border-border bg-surface/95 px-1.5 py-1 shadow-lg shadow-black/5 backdrop-blur">
               <button
                 type="button"
                 onClick={prev}
-                className="flex h-7 w-7 items-center justify-center rounded-full text-lg leading-none text-muted transition-colors hover:bg-surface-alt hover:text-foreground"
+                className="flex h-9 w-9 sm:h-7 sm:w-7 items-center justify-center rounded-full text-xl sm:text-lg leading-none text-muted transition-colors hover:bg-surface-alt hover:text-foreground"
                 aria-label="Mercado anterior"
               >
                 ‹
               </button>
-              <span className="min-w-[48px] text-center text-xs font-semibold tabular-nums text-muted">
-                {activeIdx + 1} of {featured.length}
+              <span className="min-w-[40px] text-center text-xs font-semibold tabular-nums text-muted">
+                {activeIdx + 1}/{featured.length}
               </span>
               <button
                 type="button"
                 onClick={next}
-                className="flex h-7 w-7 items-center justify-center rounded-full text-lg leading-none text-muted transition-colors hover:bg-surface-alt hover:text-foreground"
+                className="flex h-9 w-9 sm:h-7 sm:w-7 items-center justify-center rounded-full text-xl sm:text-lg leading-none text-muted transition-colors hover:bg-surface-alt hover:text-foreground"
                 aria-label="Mercado siguiente"
               >
                 ›
@@ -480,6 +490,7 @@ function Sidebar({ markets }: { markets: ApiMarket[] }) {
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function Home() {
+  const router = useRouter();
   const [rawMarkets, setRawMarkets]         = useState<ApiMarket[]>([]);
   const [isLoading, setIsLoading]           = useState(true);
   const [refreshing, setRefreshing]         = useState(false);
@@ -510,6 +521,15 @@ export default function Home() {
     return () => clearInterval(id);
   }, [load]);
 
+  // Redirect when user pastes a VDN-XXXXX public ID into the search box
+  useEffect(() => {
+    const trimmed = search.trim().toUpperCase();
+    if (!/^VDN-[A-Z2-9]{5}$/.test(trimmed)) return;
+    searchMarketByPublicId(trimmed)
+      .then(data => { if (data) router.push(`/market/${data.market.marketId}`); })
+      .catch(() => {});
+  }, [search, router]);
+
   const stats = useMemo(() => {
     const active   = rawMarkets.filter(m => m.status === "OPEN").length;
     const totalVdn = rawMarkets.reduce(
@@ -524,13 +544,13 @@ export default function Home() {
     return rawMarkets.filter(m => matchCategory(m) === activeCategory);
   }, [rawMarkets, activeCategory]);
 
-  const markets: MarketData[] = useMemo(() => {
+  const displayedMarkets = useMemo(() => {
     let list = filteredByCategory;
     if (search.trim()) {
       const q = search.toLowerCase();
       list = list.filter(m => m.question.toLowerCase().includes(q));
     }
-    return list.map(toMarketData);
+    return list;
   }, [filteredByCategory, search]);
 
   return (
@@ -567,7 +587,7 @@ export default function Home() {
             type="text"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            placeholder="Buscar mercados..."
+            placeholder="Buscar mercados o pegar ID (VDN-XXXXX)..."
             className="w-full pl-9 pr-4 py-2 rounded-lg bg-surface border border-border text-sm text-foreground placeholder:text-muted focus:outline-none focus:border-accent/60 transition-colors"
           />
         </div>
@@ -616,7 +636,7 @@ export default function Home() {
       {!isLoading && !error && (
         <div className="flex gap-6 items-start">
           <div className="flex-1 min-w-0">
-            {markets.length === 0 ? (
+            {displayedMarkets.length === 0 ? (
               <div className="text-center py-20">
                 {search || activeCategory !== "all" ? (
                   <p className="text-muted">Sin resultados para tu búsqueda.</p>
@@ -629,8 +649,8 @@ export default function Home() {
               </div>
             ) : (
               <div className={`grid gap-3 sm:grid-cols-2 transition-opacity duration-300 ${refreshing ? "opacity-60" : ""}`}>
-                {markets.map(m => (
-                  <MarketCard key={String(m.marketId)} market={m} />
+                {displayedMarkets.map(m => (
+                  <MarketCard key={String(m.marketId)} market={toMarketData(m)} publicId={m.publicId} />
                 ))}
               </div>
             )}
