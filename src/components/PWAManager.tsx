@@ -23,7 +23,7 @@ export default function PWAManager() {
     const ios = /iPad|iPhone|iPod/.test(navigator.userAgent);
     setIsIOS(ios);
 
-    const dismissed = localStorage.getItem('pwa_banner_dismissed');
+    const dismissed = localStorage.getItem('pwa_banner_dismissed_v2');
     const dismissedAt = dismissed ? parseInt(dismissed) : 0;
     const daysSince = (Date.now() - dismissedAt) / (1000 * 60 * 60 * 24);
     if (daysSince < 7) return;
@@ -80,7 +80,7 @@ export default function PWAManager() {
 
   const handleDismiss = () => {
     setShowBanner(false);
-    localStorage.setItem('pwa_banner_dismissed', Date.now().toString());
+    localStorage.setItem('pwa_banner_dismissed_v2', Date.now().toString());
   };
 
   useEffect(() => {
