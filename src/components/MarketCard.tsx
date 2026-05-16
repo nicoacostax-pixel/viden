@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { MarketData, formatVDN, getProbability, getOutcomeLabel } from "@/hooks/usePredictionMarket";
 import { Outcome } from "@/config/contracts";
@@ -45,16 +45,33 @@ function useTimeLeft(closeTime: bigint): string {
 
 // ── MarketCard ────────────────────────────────────────────────────────────────
 
-export function MarketCard({ market }: { market: MarketData }) {
+export function MarketCard({ market, publicId }: { market: MarketData; publicId?: string | null }) {
   const { yes, no } = getProbability(market.totalPoolYes, market.totalPoolNo);
   const totalPool   = market.totalPoolYes + market.totalPoolNo;
   const isOpen      = market.outcome === Outcome.OPEN;
   const emoji       = getCategoryEmoji(market.question);
   const closed      = Number(market.closeTime) <= Math.floor(Date.now() / 1000);
   const timeLeft    = useTimeLeft(market.closeTime);
+  const cardRef     = useRef<HTMLAnchorElement>(null);
+
+  useEffect(() => {
+    const el = cardRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          el.classList.add("card-visible");
+          obs.unobserve(el);
+        }
+      },
+      { threshold: 0.08 }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
 
   return (
-    <Link href={`/market/${market.marketId}`}>
+    <Link ref={cardRef} href={`/market/${market.marketId}`} className="card-reveal cursor-pointer">
       <div className="group relative p-4 rounded-xl bg-surface border border-border hover:border-accent/60 hover:shadow-[0_0_0_1px_rgba(79,70,229,0.25)] transition-all duration-200 cursor-pointer h-full flex flex-col gap-3">
 
         {/* Top row: emoji + status badge */}
@@ -99,16 +116,22 @@ export function MarketCard({ market }: { market: MarketData }) {
           <span className="text-[11px] text-muted">
             Vol: <span className="text-foreground font-medium">{formatVDN(totalPool)} VDN</span>
           </span>
-          {isOpen && !closed && (
-            <span className="text-[11px] text-warning font-medium">
-              ⏱ {timeLeft}
-            </span>
-          )}
-          {closed && isOpen && (
-            <span className="text-[11px] text-muted">Cerrado</span>
-          )}
+          <div className="flex items-center gap-2">
+            {publicId && (
+              <span className="text-[10px] text-muted/50 font-mono tabular-nums">{publicId}</span>
+            )}
+            {isOpen && !closed && (
+              <span className="text-[11px] text-warning font-medium">
+                ⏱ {timeLeft}
+              </span>
+            )}
+            {closed && isOpen && (
+              <span className="text-[11px] text-muted">Cerrado</span>
+            )}
+          </div>
         </div>
       </div>
     </Link>
   );
 }
+

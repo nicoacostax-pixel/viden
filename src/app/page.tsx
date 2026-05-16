@@ -106,7 +106,7 @@ function CarouselCard({ market, fading }: { market: ApiMarket; fading: boolean }
   const lastPt  = chartData[chartData.length - 1];
 
   return (
-    <Link href={`/market/${market.marketId}`} className="block">
+    <Link href={`/market/${market.marketId}`} className="block cursor-pointer">
       <div
         className="rounded-2xl bg-surface border border-border overflow-hidden hover:border-accent/40 hover:shadow-xl hover:shadow-accent/5"
         style={{
@@ -415,7 +415,7 @@ function SidebarMarketItem({ market }: { market: ApiMarket }) {
     : market.question;
 
   return (
-    <Link href={`/market/${market.marketId}`}>
+    <Link href={`/market/${market.marketId}`} className="cursor-pointer">
       <div className="flex items-start gap-2.5 py-2.5 px-3 rounded-lg hover:bg-surface-alt transition-colors cursor-pointer group">
         <span className="text-lg leading-none shrink-0 mt-0.5">{emoji}</span>
         <div className="flex-1 min-w-0">
