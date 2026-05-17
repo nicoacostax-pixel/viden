@@ -42,7 +42,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <div className="max-w-5xl mx-auto px-3 sm:px-4 py-2.5 flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2 sm:gap-6">
                   <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-                    <Image src="/icon.png?v=2" alt="Viden" width={32} height={32} className="rounded-md" priority />
+                    {/* light mode logo */}
+                    <Image src="/logoverde.jpg" alt="Viden" width={32} height={32} className="rounded-md block dark:hidden" priority />
+                    {/* dark mode logo */}
+                    <Image src="/logoverde1.jpg" alt="Viden" width={32} height={32} className="rounded-md hidden dark:block" priority />
                     <span className="text-xl font-bold text-foreground">Viden</span>
                   </Link>
                   <NavLinks />
