@@ -25,6 +25,7 @@ import { getMarket, type ApiMarket } from "@/lib/api";
 import { useWatchlist } from "@/hooks/useWatchlist";
 import { MultiOutcomePanel } from "@/components/MultiOutcomePanel";
 import { BtcLiveChart } from "@/components/BtcLiveChart";
+import { FootballScoreWidget } from "@/components/FootballScoreWidget";
 import {
   LineChart, Line, CartesianGrid, XAxis, YAxis,
   ResponsiveContainer, ReferenceDot,
@@ -989,6 +990,13 @@ export default function MarketDetail() {
           </span>
         )}
       </div>
+
+      {/* ── Football score widget ── */}
+      {custodialMkt.homeTeam && custodialMkt.awayTeam && (
+        <div className="mb-4">
+          <FootballScoreWidget market={custodialMkt} />
+        </div>
+      )}
 
       {/* ── BTC Live Chart (auto-markets) ── */}
       {custodialMkt.isBtcAuto && (

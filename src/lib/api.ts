@@ -32,6 +32,15 @@ export type ApiMarket = {
   resolvedOutcomeId: number | null;
   isBtcAuto: boolean;
   btcTargetPrice: number | null;
+  homeTeam: string | null;
+  awayTeam: string | null;
+  kickoffTs: number | null;
+  source: string | null;
+  liveScoreHome: number | null;
+  liveScoreAway: number | null;
+  matchMinute: number | null;
+  matchStatus: string | null;
+  competitionName: string | null;
 };
 
 export type ApiPosition = {
