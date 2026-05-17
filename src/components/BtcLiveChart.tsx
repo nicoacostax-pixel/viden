@@ -1,14 +1,15 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid,
   ResponsiveContainer, ReferenceLine, Tooltip,
 } from "recharts";
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
-const POLL_MS = 2_000;
-const MAX_POINTS = 150;
+const API      = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
+const FETCH_MS = 2_000;   // real price fetch interval
+const TICK_MS  = 250;     // interpolation tick (8 per fetch cycle)
+const MAX_PTS  = 200;
 
 interface PricePoint { ts: number; price: number }
 
@@ -34,49 +35,84 @@ function fmtTime(ts: number) {
   });
 }
 
-interface Props {
-  targetPrice: number;
-  closeTime: number;
-  marketStatus: string;
-}
+interface Props { targetPrice: number; closeTime: number; marketStatus: string }
 
 export function BtcLiveChart({ targetPrice, closeTime, marketStatus }: Props) {
   const [points, setPoints] = useState<PricePoint[]>([]);
   const [current, setCurrent] = useState<number | null>(null);
   const countdown = useCountdown(closeTime);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Refs for interpolation — no re-render on write
+  const prevPriceRef    = useRef<number | null>(null);
+  const curPriceRef     = useRef<number | null>(null);
+  const lastFetchTsRef  = useRef<number>(0);
 
   const isOpen = marketStatus === "OPEN";
 
+  // ── Real fetch every 2s ──────────────────────────────────────────────────────
+  const fetchPrice = useCallback(async () => {
+    try {
+      const res  = await fetch(`${API}/api/btc/price`);
+      const data = await res.json();
+      const price = data.price as number;
+      if (!price || isNaN(price)) return;
+      prevPriceRef.current   = curPriceRef.current;
+      curPriceRef.current    = price;
+      lastFetchTsRef.current = Date.now();
+      setCurrent(price);
+    } catch { /* ignore */ }
+  }, []);
+
   useEffect(() => {
-    async function poll() {
-      try {
-        const res  = await fetch(`${API}/api/btc/price`);
-        const data = await res.json();
-        const price = data.price as number;
-        const ts    = Date.now();
-        setCurrent(price);
-        setPoints(prev => {
-          const next = [...prev, { ts, price }];
-          return next.length > MAX_POINTS ? next.slice(next.length - MAX_POINTS) : next;
-        });
-      } catch { /* ignore */ }
-    }
+    fetchPrice();
+    if (!isOpen) return;
 
-    poll();
-    if (isOpen) {
-      intervalRef.current = setInterval(poll, POLL_MS);
-    }
-    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
-  }, [isOpen]);
+    const fetchId = setInterval(fetchPrice, FETCH_MS);
 
-  const aboveTarget = current !== null && current >= targetPrice;
+    // ── Interpolation tick every 250ms ─────────────────────────────────────────
+    // Smoothly advance from prevPrice → curPrice within each 2s fetch window.
+    // Between windows the price is held at curPrice (flat line for <250ms max).
+    const tickId = setInterval(() => {
+      const cur  = curPriceRef.current;
+      const prev = prevPriceRef.current;
+      if (cur === null) return;
+
+      const now     = Date.now();
+      const elapsed = now - lastFetchTsRef.current;
+      // After one full cycle without new data, just hold the last price
+      const progress = Math.min(elapsed / FETCH_MS, 1);
+
+      const displayPrice = (prev !== null && progress <= 1)
+        ? prev + (cur - prev) * progress
+        : cur;
+
+      setPoints(pts => {
+        const next = [...pts, { ts: now, price: +displayPrice.toFixed(2) }];
+        return next.length > MAX_PTS ? next.slice(-MAX_PTS) : next;
+      });
+    }, TICK_MS);
+
+    return () => { clearInterval(fetchId); clearInterval(tickId); };
+  }, [isOpen, fetchPrice]);
+
+  const aboveTarget = current !== null && targetPrice > 0 && current >= targetPrice;
   const resultColor = aboveTarget ? "#10B981" : "#EF4444";
 
-  // Dynamic Y-axis domain around the price range
-  const prices = points.map(p => p.price);
-  const min = prices.length ? Math.min(...prices, targetPrice) - 50 : targetPrice - 200;
-  const max = prices.length ? Math.max(...prices, targetPrice) + 50 : targetPrice + 200;
+  // Stable Y domain — only depends on the actual price range, not interpolated jitter
+  const domainRef = useRef<[number, number]>([0, 0]);
+  if (current !== null) {
+    const base = targetPrice > 0 ? targetPrice : current;
+    const lo = Math.min(current, base) - 150;
+    const hi = Math.max(current, base) + 150;
+    // Expand domain, never shrink mid-session (prevents axis jumping)
+    domainRef.current = [
+      Math.min(domainRef.current[0] || lo, lo),
+      Math.max(domainRef.current[1] || hi, hi),
+    ];
+  }
+  const [yMin, yMax] = domainRef.current[1] > 0
+    ? domainRef.current
+    : [targetPrice - 200, targetPrice + 200];
 
   return (
     <div className="rounded-xl bg-background border border-border p-4 space-y-3">
@@ -93,10 +129,10 @@ export function BtcLiveChart({ targetPrice, closeTime, marketStatus }: Props) {
         </div>
         <div className="text-right">
           {isOpen ? (
-            <div>
+            <>
               <div className="text-xs text-muted">Cierra en</div>
               <div className="text-lg font-mono font-bold tabular-nums">{countdown}</div>
-            </div>
+            </>
           ) : (
             <div className="text-sm font-semibold" style={{ color: resultColor }}>
               {aboveTarget ? "SÍ ganó" : "NO ganó"}
@@ -108,33 +144,36 @@ export function BtcLiveChart({ targetPrice, closeTime, marketStatus }: Props) {
       {/* Price & target */}
       <div className="flex items-end justify-between">
         <div>
-          <div className="text-3xl font-black tabular-nums" style={{ color: isOpen ? "inherit" : resultColor }}>
+          <div className="text-3xl font-black tabular-nums transition-all duration-300"
+               style={{ color: isOpen ? "inherit" : resultColor }}>
             {current !== null
               ? `$${current.toLocaleString("en", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
               : "—"}
           </div>
           <div className="text-xs text-muted mt-0.5">Precio actual</div>
         </div>
-        <div className="text-right">
-          <div className="text-lg font-bold text-warning tabular-nums">
-            ${targetPrice.toLocaleString("en")}
+        {targetPrice > 0 && (
+          <div className="text-right">
+            <div className="text-lg font-bold text-warning tabular-nums">
+              ${targetPrice.toLocaleString("en")}
+            </div>
+            <div className="text-xs text-muted">Meta (SÍ)</div>
           </div>
-          <div className="text-xs text-muted">Meta (SÍ)</div>
-        </div>
+        )}
       </div>
 
       {/* Chart */}
       <div className="h-[180px]">
-        {points.length < 2 ? (
+        {points.length < 3 ? (
           <div className="h-full flex items-center justify-center text-muted text-sm">
             Cargando datos…
           </div>
         ) : (
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={points} margin={{ top: 4, right: 44, bottom: 0, left: 0 }}>
+            <AreaChart data={points} margin={{ top: 4, right: 52, bottom: 0, left: 0 }}>
               <defs>
                 <linearGradient id="btcGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#F59E0B" stopOpacity={0.25} />
+                  <stop offset="5%"  stopColor="#F59E0B" stopOpacity={0.2} />
                   <stop offset="95%" stopColor="#F59E0B" stopOpacity={0} />
                 </linearGradient>
               </defs>
@@ -150,12 +189,12 @@ export function BtcLiveChart({ targetPrice, closeTime, marketStatus }: Props) {
               />
               <YAxis
                 orientation="right"
-                domain={[Math.floor(min), Math.ceil(max)]}
+                domain={[Math.floor(yMin), Math.ceil(yMax)]}
                 tickFormatter={v => `$${(v as number).toLocaleString("en")}`}
                 tick={{ fill: "#9CA3AF", fontSize: 9 }}
                 tickLine={false}
                 axisLine={false}
-                width={72}
+                width={76}
                 tickCount={5}
               />
               <Tooltip
@@ -165,13 +204,12 @@ export function BtcLiveChart({ targetPrice, closeTime, marketStatus }: Props) {
                 }}
                 labelFormatter={ts => fmtTime(ts as number)}
                 contentStyle={{
-                  background: "var(--color-surface)",
-                  border: "1px solid var(--color-border)",
+                  background: "var(--color-surface, #1a1a2e)",
+                  border: "1px solid var(--color-border, #333)",
                   borderRadius: 8,
                   fontSize: 12,
                 }}
               />
-              {/* Target price reference line */}
               {targetPrice > 0 && (
                 <ReferenceLine
                   y={targetPrice}
@@ -188,7 +226,7 @@ export function BtcLiveChart({ targetPrice, closeTime, marketStatus }: Props) {
                 />
               )}
               <Area
-                type="monotone"
+                type="monotoneX"
                 dataKey="price"
                 stroke="#F59E0B"
                 strokeWidth={2}
@@ -201,10 +239,9 @@ export function BtcLiveChart({ targetPrice, closeTime, marketStatus }: Props) {
         )}
       </div>
 
-      {/* Status strip */}
       <div className="flex items-center justify-between text-xs text-muted border-t border-border pt-2">
-        <span>Apuesta SÍ si BTC supera la meta</span>
-        <span>Apuesta NO si BTC se queda debajo</span>
+        <span>SÍ: BTC supera la meta</span>
+        <span>NO: BTC se queda debajo</span>
       </div>
     </div>
   );
