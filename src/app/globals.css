@@ -48,6 +48,15 @@ body, header, main, aside, nav,
   }
 }
 
+/* ── Modal slide-up ──────────────────────────────────────────────────────── */
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+.animate-slide-up {
+  animation: slideUp 0.22s cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+
 /* ── Sidebar slide-in (from right) ───────────────────────────────────────── */
 @keyframes slideInRight {
   from { transform: translateX(100%); }

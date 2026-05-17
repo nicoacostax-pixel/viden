@@ -20,6 +20,17 @@ export function NavLinks() {
   return (
     <nav className="hidden sm:flex items-center gap-5 text-sm">
       <Link href="/" className={linkClass("/")}>Mercados</Link>
+      <Link href="/portfolio" className={linkClass("/portfolio")}>Portfolio</Link>
+      <Link href="/torneos" className={linkClass("/torneos")}>Torneos</Link>
+      <Link href="/leaderboard" className={linkClass("/leaderboard")}>Ranking</Link>
+      <Link href="/logros" className={linkClass("/logros")}>Logros</Link>
+      <Link href="/juegos" className={linkClass("/juegos")}>Juegos</Link>
+      {isLoggedIn && (
+        <Link href="/mis-mercados" className={linkClass("/mis-mercados")}>Mis mercados</Link>
+      )}
+      {isAdmin && (
+        <Link href="/admin" className={linkClass("/admin")}>Admin</Link>
+      )}
       {isLoggedIn && (
         <Link
           href="/crear-mercado"
@@ -31,14 +42,6 @@ export function NavLinks() {
         >
           + Crear
         </Link>
-      )}
-      <Link href="/portfolio" className={linkClass("/portfolio")}>Portfolio</Link>
-      <Link href="/juegos" className={linkClass("/juegos")}>Juegos</Link>
-      {isLoggedIn && (
-        <Link href="/mis-mercados" className={linkClass("/mis-mercados")}>Mis mercados</Link>
-      )}
-      {isAdmin && (
-        <Link href="/admin" className={linkClass("/admin")}>Admin</Link>
       )}
     </nav>
   );

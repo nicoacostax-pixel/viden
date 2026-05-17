@@ -4,48 +4,127 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { createPortal } from "react-dom";
-import { useAccount, useConnect, useDisconnect, useWalletClient } from "wagmi";
-import { injected } from "wagmi/connectors";
-import { useVDNBalance } from "@/hooks/useVDNToken";
-import { VDN_TOKEN_ADDRESS } from "@/config/contracts";
+import { useAccount, useConnect, useDisconnect } from "wagmi";
 import { useAuth } from "@/context/AuthContext";
 
-// ── Add VDN to MetaMask ───────────────────────────────────────────────────────
+// ── Wallet connect explainer modal ────────────────────────────────────────────
 
-function AddVDNButton() {
-  const { data: walletClient } = useWalletClient();
-  const [added, setAdded] = useState(false);
+const SITE_URL = "https://frontend-three-rho-31.vercel.app";
 
-  async function handleClick() {
-    try {
-      await walletClient?.watchAsset({ type: "ERC20", options: { address: VDN_TOKEN_ADDRESS, symbol: "VDN", decimals: 18 } });
-      setAdded(true);
-      setTimeout(() => setAdded(false), 3000);
-    } catch { /* user rejected */ }
-  }
+function WalletConnectModal({ onConnect, onClose }: { onConnect: () => void; onClose: () => void }) {
+  const [isMobile, setIsMobile] = useState(false);
+  const [inMetaMask, setInMetaMask] = useState(false);
 
-  if (added) return <span className="text-xs font-medium text-success whitespace-nowrap">¡Añadido! ✓</span>;
+  useEffect(() => {
+    const ua = navigator.userAgent;
+    setIsMobile(/Android|iPhone|iPad|iPod/i.test(ua));
+    setInMetaMask(/MetaMaskMobile/i.test(ua));
+  }, []);
+
+  const mmDeepLink = `https://metamask.app.link/dapp/${SITE_URL.replace(/^https?:\/\//, "")}`;
 
   return (
-    <button onClick={handleClick} title="Añadir $VDN a MetaMask"
-      className="flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium text-muted hover:text-foreground border border-border hover:border-accent bg-surface-alt transition-colors">
-      <svg viewBox="0 0 35 33" className="w-3.5 h-3.5" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M32.9 1 19.6 10.7l2.4-5.7L32.9 1Z" fill="#E17726" stroke="#E17726" strokeWidth=".25" strokeLinecap="round" strokeLinejoin="round"/>
-        <path d="M2.1 1l13.2 9.8-2.3-5.8L2.1 1Z" fill="#E27625" stroke="#E27625" strokeWidth=".25" strokeLinecap="round" strokeLinejoin="round"/>
-        <path d="M28.2 23.5l-3.5 5.4 7.5 2.1 2.1-7.3-6.1-.2ZM1.7 23.7 3.8 31l7.4-2.1-3.4-5.4-6.1.2Z" fill="#E27625" stroke="#E27625" strokeWidth=".25" strokeLinecap="round" strokeLinejoin="round"/>
-        <path d="m11.2 14.5-2 3.1 7.2.3-.3-7.7-4.9 4.3ZM23.8 14.5l-5-4.4-.2 7.8 7.2-.3-2-3.1ZM11.2 28.9l4.3-2.1-3.7-2.9-.6 5ZM19.5 26.8l4.3 2.1-.6-5-3.7 2.9Z" fill="#E27625" stroke="#E27625" strokeWidth=".25" strokeLinecap="round" strokeLinejoin="round"/>
-        <path d="m23.8 28.9-4.3-2.1.3 2.7v1l4-1.6ZM11.2 28.9l4 1.6v-1l.3-2.7-4.3 2.1Z" fill="#D5BFB2" stroke="#D5BFB2" strokeWidth=".25" strokeLinecap="round" strokeLinejoin="round"/>
-        <path d="m15.3 21.8-3.6-1.1 2.5-1.1 1.1 2.2ZM19.7 21.8l1.1-2.2 2.6 1.1-3.7 1.1Z" fill="#233447" stroke="#233447" strokeWidth=".25" strokeLinecap="round" strokeLinejoin="round"/>
-        <path d="m11.2 28.9.6-5-4 .1 3.4 4.9ZM23.2 23.9l.6 5 3.4-4.9-4-.1ZM26 17.6l-7.2.3.7 3.9 1.1-2.2 2.6 1.1L26 17.6ZM11.7 20.7l2.5-1.1 1.1 2.2.7-3.9-7.2-.3 2.9 3.1Z" fill="#CC6228" stroke="#CC6228" strokeWidth=".25" strokeLinecap="round" strokeLinejoin="round"/>
-        <path d="m9 17.6 3 5.9-.1-2.8L9 17.6ZM23.1 20.7l-.1 2.8 3-5.9-2.9 3.1ZM16.2 17.9l-.7 3.9.8 4.3.2-5.7-.3-2.5ZM18.8 17.9l-.2 2.5.1 5.7.9-4.3-.8-3.9Z" fill="#E27525" stroke="#E27525" strokeWidth=".25" strokeLinecap="round" strokeLinejoin="round"/>
-        <path d="m19.7 21.8-.9 4.3.6.5 3.7-2.9.1-2.8-3.5.9ZM11.7 20.9l.1 2.8 3.7 2.9.6-.5-.8-4.3-3.6-.9Z" fill="#F5841F" stroke="#F5841F" strokeWidth=".25" strokeLinecap="round" strokeLinejoin="round"/>
-        <path d="m19.8 30.5v-1l-.3-.3h-4l-.2.3v1l-4-1.6 1.4 1.2h5.6l1.4-1.2-1.9.4Z" fill="#C0AC9D" stroke="#C0AC9D" strokeWidth=".25" strokeLinecap="round" strokeLinejoin="round"/>
-        <path d="m19.5 26.8-.6-.5h-3.8l-.6.5-.3 2.7.2-.3h4l.3.3-.2-2.7Z" fill="#161616" stroke="#161616" strokeWidth=".25" strokeLinecap="round" strokeLinejoin="round"/>
-        <path d="M33.5 11.3 34.6 6l-1.7-5-12.4 9.2 4.8 4 6.7 2 1.5-1.7-.6-.5 1-.9-.8-.6 1-.8-.6-.4ZM.4 6l1.1 5.3-.7.5 1 .8-.8.6 1 .9-.6.5 1.5 1.7 6.7-2 4.8-4L2 1 .4 6Z" fill="#763E1A" stroke="#763E1A" strokeWidth=".25" strokeLinecap="round" strokeLinejoin="round"/>
-        <path d="m32 19.3-6.7-2 2 3.1-3 5.9 4-.1h6.1l-2.4-6.9ZM9.7 17.3l-6.7 2-2.3 6.9h6.1l4 .1-3-5.9 1.9-3.1ZM18.8 17.9l.4-7.2 2-5.5h-8.5l1.9 5.5.5 7.2.1 2.5v5.7h3.8l.1-5.7-.3-2.5Z" fill="#F5841F" stroke="#F5841F" strokeWidth=".25" strokeLinecap="round" strokeLinejoin="round"/>
-      </svg>
-      Añadir VDN
-    </button>
+    <div className="fixed inset-0 z-[99999] flex items-end sm:items-center justify-center p-4" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+      <div
+        className="relative w-full max-w-sm rounded-2xl bg-surface border border-border shadow-2xl overflow-hidden animate-slide-up"
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 pt-5 pb-4">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">🦊</span>
+            <h2 className="text-base font-bold text-foreground">Conectar una wallet</h2>
+          </div>
+          <button onClick={onClose}
+            className="w-7 h-7 flex items-center justify-center rounded-lg text-muted hover:text-foreground hover:bg-surface-alt transition-colors">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
+
+        <div className="px-5 pb-5 space-y-4">
+          <p className="text-sm text-muted leading-relaxed">
+            Una <strong className="text-foreground">wallet</strong> te permite retirar tokens VDN a tu propia dirección on-chain.{" "}
+            <strong className="text-foreground">No es necesaria para jugar</strong> — tu saldo custodial funciona sin ella.
+          </p>
+
+          {isMobile && !inMetaMask ? (
+            /* ── Mobile: not inside MetaMask browser ── */
+            <div className="space-y-3">
+              <div className="rounded-xl bg-amber-500/10 border border-amber-500/20 px-4 py-3">
+                <p className="text-xs font-semibold text-amber-400 mb-1">En móvil no hay extensiones</p>
+                <p className="text-xs text-muted leading-relaxed">
+                  Para conectar MetaMask desde el móvil necesitas abrir Viden desde el <strong className="text-foreground">navegador integrado de la app MetaMask</strong>.
+                </p>
+              </div>
+              {[
+                { n: "1", title: "Descarga MetaMask", desc: "App gratuita para iOS y Android." },
+                { n: "2", title: "Abre el navegador de MetaMask", desc: 'Toca el icono de brújula en la barra inferior de la app.' },
+                { n: "3", title: "Navega a Viden", desc: "Escribe la dirección de Viden en la barra de MetaMask y conéctate." },
+              ].map(s => (
+                <div key={s.n} className="flex items-start gap-3">
+                  <span className="w-6 h-6 rounded-full bg-accent/20 text-accent-light text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">{s.n}</span>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">{s.title}</p>
+                    <p className="text-xs text-muted">{s.desc}</p>
+                  </div>
+                </div>
+              ))}
+              <div className="flex gap-2 pt-1">
+                <a href="https://apps.apple.com/app/metamask/id1438144202" target="_blank" rel="noopener noreferrer"
+                  className="flex-1 py-2.5 rounded-xl bg-surface-alt border border-border text-xs font-semibold text-foreground text-center hover:border-accent transition-colors">
+                   iOS App Store
+                </a>
+                <a href="https://play.google.com/store/apps/details?id=io.metamask" target="_blank" rel="noopener noreferrer"
+                  className="flex-1 py-2.5 rounded-xl bg-surface-alt border border-border text-xs font-semibold text-foreground text-center hover:border-accent transition-colors">
+                   Google Play
+                </a>
+              </div>
+              <a href={mmDeepLink} target="_blank" rel="noopener noreferrer"
+                className="block w-full py-2.5 rounded-xl bg-accent hover:bg-accent-hover text-white text-sm font-semibold text-center transition-colors">
+                Abrir en MetaMask →
+              </a>
+            </div>
+          ) : (
+            /* ── Desktop or already inside MetaMask browser ── */
+            <div className="space-y-3">
+              {inMetaMask && (
+                <div className="rounded-xl bg-success/10 border border-success/20 px-4 py-3">
+                  <p className="text-xs font-semibold text-success">Estás en el navegador de MetaMask</p>
+                  <p className="text-xs text-muted mt-0.5">Puedes conectarte directamente.</p>
+                </div>
+              )}
+              {[
+                { n: "1", title: "Instala MetaMask", desc: "Extensión gratuita para Chrome, Firefox o Brave.", href: "https://metamask.io/download/" },
+                { n: "2", title: "Crea tu cuenta", desc: "Sigue los pasos en MetaMask y guarda tu frase secreta." },
+                { n: "3", title: "Conéctate aquí", desc: "Haz clic en el botón de abajo y aprueba en MetaMask." },
+              ].map(s => (
+                <div key={s.n} className="flex items-start gap-3">
+                  <span className="w-6 h-6 rounded-full bg-accent/20 text-accent-light text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">{s.n}</span>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">{s.title}</p>
+                    <p className="text-xs text-muted">{s.desc}{" "}
+                      {s.href && <a href={s.href} target="_blank" rel="noopener noreferrer" className="text-accent-light underline underline-offset-2">metamask.io →</a>}
+                    </p>
+                  </div>
+                </div>
+              ))}
+              <button onClick={() => { onClose(); onConnect(); }}
+                className="w-full py-2.5 rounded-xl bg-accent hover:bg-accent-hover text-white text-sm font-semibold transition-colors">
+                {inMetaMask ? "Conectar MetaMask" : "Ya tengo MetaMask — conectar"}
+              </button>
+            </div>
+          )}
+
+          <button onClick={onClose}
+            className="w-full py-2 text-xs text-muted hover:text-foreground transition-colors">
+            Ahora no
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -56,9 +135,10 @@ function CustodialUserMenu() {
   const { isConnected, address } = useAccount();
   const { connect, connectors } = useConnect();
   const { disconnect } = useDisconnect();
-  const [open,    setOpen]    = useState(false);
-  const [closing, setClosing] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const [open,           setOpen]           = useState(false);
+  const [closing,        setClosing]        = useState(false);
+  const [mounted,        setMounted]        = useState(false);
+  const [showWalletInfo, setShowWalletInfo] = useState(false);
   const pathname = usePathname();
 
   useEffect(() => { setMounted(true); }, []);
@@ -76,129 +156,125 @@ function CustodialUserMenu() {
   if (!user) return null;
   const vdn = balance?.balance_vdn ?? user.balance_vdn;
 
-  const handleConnectWallet = () => {
+  const doConnectWallet = () => {
     const connector = connectors.find(c => c.id === "injected") ?? connectors[0];
     if (connector) connect({ connector });
-    setOpen(false);
+  };
+
+  const handleConnectWallet = () => {
+    closeSidebar();
+    setTimeout(() => setShowWalletInfo(true), 260);
   };
 
   // ── Sidebar (mobile) ─────────────────────────────────────────────────────────
+  const navItem = (href: string, icon: string, label: string, exact = false) => {
+    const active = exact ? pathname === href : pathname.startsWith(href);
+    return (
+      <Link key={href} href={href} onClick={() => setOpen(false)}
+        className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
+          active
+            ? "bg-accent/15 text-accent-light"
+            : "text-muted hover:text-foreground hover:bg-surface-alt"
+        }`}>
+        <span className={`w-8 h-8 flex items-center justify-center rounded-lg text-base transition-all ${
+          active ? "bg-accent/20" : "bg-surface-alt group-hover:bg-border"
+        }`}>{icon}</span>
+        {label}
+        {active && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-accent shrink-0" />}
+      </Link>
+    );
+  };
+
   const sidebar = (
     <div className="fixed inset-0 z-[9999] sm:hidden" onClick={closeSidebar}>
-      <div className={`absolute inset-0 bg-black/70 ${closing ? "animate-backdrop-out" : "animate-backdrop-in"}`} />
+      <div className={`absolute inset-0 bg-black/60 backdrop-blur-sm ${closing ? "animate-backdrop-out" : "animate-backdrop-in"}`} />
       <div
-        className={`absolute right-0 top-0 h-full w-[280px] bg-background border-l border-border flex flex-col shadow-2xl ${closing ? "animate-slide-out-right" : "animate-slide-in-right"}`}
+        className={`absolute right-0 top-0 h-full w-[300px] bg-background flex flex-col shadow-2xl ${closing ? "animate-slide-out-right" : "animate-slide-in-right"}`}
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 h-14 border-b border-border shrink-0">
-          <div className="flex flex-col leading-none">
-            <span className="text-sm font-bold text-foreground">@{user.username}</span>
-            <span className="text-xs text-accent-light mt-0.5">
-              {vdn.toLocaleString("es", { maximumFractionDigits: 0 })} VDN
-            </span>
-            <span className="text-[10px] text-muted mt-0.5">
-              ≈ ${(vdn * 0.01).toLocaleString("es", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
-            </span>
+        <div className="flex items-center gap-3 px-4 py-4 shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-accent/20 flex items-center justify-center text-accent-light font-bold text-base shrink-0">
+            {user.username[0].toUpperCase()}
           </div>
-          <button
-            onClick={closeSidebar}
-            className="w-9 h-9 flex items-center justify-center rounded-lg text-muted hover:text-foreground transition-colors"
-            aria-label="Cerrar"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold text-foreground leading-none">@{user.username}</p>
+            <p className="text-xs text-accent-light mt-1 font-medium">
+              {vdn.toLocaleString("es", { maximumFractionDigits: 0 })} VDN
+              <span className="text-muted font-normal ml-1">≈ ${(vdn * 0.01).toFixed(2)}</span>
+            </p>
+          </div>
+          <button onClick={closeSidebar}
+            className="w-8 h-8 flex items-center justify-center rounded-lg text-muted hover:text-foreground hover:bg-surface-alt transition-colors shrink-0"
+            aria-label="Cerrar">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
               <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
             </svg>
           </button>
         </div>
 
+        {/* Crear CTA */}
+        <div className="px-4 pb-3 shrink-0">
+          <Link href="/crear-mercado" onClick={() => setOpen(false)}
+            className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-accent hover:bg-accent-hover text-white text-sm font-semibold transition-colors">
+            <span className="text-base">＋</span> Crear mercado
+          </Link>
+        </div>
+
+        <div className="h-px bg-border mx-4 shrink-0" />
+
         {/* Nav */}
-        <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
-          {([
-            { href: "/",            label: "🎯 Mercados" },
-            { href: "/portfolio",   label: "📊 Portfolio" },
-            { href: "/juegos",      label: "🎮 Juegos" },
-          ] as const).map(({ href, label }) => {
-            const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
-            return (
-              <Link key={href} href={href} onClick={() => setOpen(false)}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors ${
-                  active ? "bg-accent/10 text-accent-light font-semibold" : "text-foreground hover:bg-surface-alt"
-                }`}>
-                {label}
-              </Link>
-            );
-          })}
+        <nav className="flex-1 overflow-y-auto py-3 px-3 space-y-0.5">
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-muted px-3 pb-1.5 pt-1">Explorar</p>
+          {navItem("/", "🎯", "Mercados", true)}
+          {navItem("/torneos", "🏆", "Torneos")}
+          {navItem("/leaderboard", "🥇", "Ranking")}
+          {navItem("/logros", "🏅", "Logros")}
+          {navItem("/juegos", "🎮", "Juegos")}
 
-          <div className="h-px bg-border my-2" />
-
-          {(() => {
-            const active = pathname.startsWith("/crear-mercado");
-            return (
-              <Link href="/crear-mercado" onClick={() => setOpen(false)}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold border transition-colors ${
-                  active
-                    ? "bg-accent/20 text-accent-light border-accent/40"
-                    : "bg-accent/10 text-accent-light border-accent/20"
-                }`}>
-                ➕ Crear mercado
-              </Link>
-            );
-          })()}
-
-          {([
-            { href: "/mis-mercados", label: "📋 Mis mercados" },
-            { href: "/wallet",       label: "💰 Mi Wallet" },
-          ] as const).map(({ href, label }) => {
-            const active = pathname.startsWith(href);
-            return (
-              <Link key={href} href={href} onClick={() => setOpen(false)}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors ${
-                  active ? "bg-accent/10 text-accent-light font-semibold" : "text-foreground hover:bg-surface-alt"
-                }`}>
-                {label}
-              </Link>
-            );
-          })}
+          <div className="h-px bg-border my-2 mx-1" />
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-muted px-3 pb-1.5 pt-1">Mi cuenta</p>
+          {navItem("/cuenta", "👤", "Mi cuenta")}
+          {navItem("/portfolio", "📊", "Portfolio")}
+          {navItem("/mis-mercados", "📋", "Mis mercados")}
+          {navItem("/wallet", "💰", "Mi Wallet")}
 
           {isAdmin && (
             <>
-              <div className="h-px bg-border my-2" />
-              {(() => {
-                const active = pathname.startsWith("/admin");
-                return (
-                  <Link href="/admin" onClick={() => setOpen(false)}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors ${
-                      active ? "bg-accent/10 text-accent-light font-semibold" : "text-foreground hover:bg-surface-alt"
-                    }`}>
-                    ⚙️ Admin
-                  </Link>
-                );
-              })()}
+              <div className="h-px bg-border my-2 mx-1" />
+              {navItem("/admin", "⚙️", "Admin")}
             </>
           )}
 
-          <div className="h-px bg-border my-2" />
-
-          {isConnected ? (
-            <button onClick={() => { disconnect(); setOpen(false); }}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-foreground hover:bg-surface-alt transition-colors">
-              <span className="w-2 h-2 rounded-full bg-success shrink-0" />
-              {address?.slice(0, 6)}…{address?.slice(-4)}
-              <span className="ml-auto text-xs text-muted">Desconectar</span>
-            </button>
-          ) : (
-            <button onClick={handleConnectWallet}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-foreground hover:bg-surface-alt transition-colors">
-              🦊 Conectar wallet
-            </button>
+          {isConnected && (
+            <>
+              <div className="h-px bg-border my-2 mx-1" />
+              <button onClick={() => { disconnect(); setOpen(false); }}
+                className="group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-muted hover:text-foreground hover:bg-surface-alt transition-all w-full">
+                <span className="w-8 h-8 flex items-center justify-center rounded-lg bg-surface-alt group-hover:bg-border transition-all">
+                  <span className="w-2 h-2 rounded-full bg-success" />
+                </span>
+                {address?.slice(0, 6)}…{address?.slice(-4)}
+                <span className="ml-auto text-[11px] text-muted">Desconectar</span>
+              </button>
+            </>
+          )}
+          {!isConnected && (
+            <>
+              <div className="h-px bg-border my-2 mx-1" />
+              <button onClick={handleConnectWallet}
+                className="group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-muted hover:text-foreground hover:bg-surface-alt transition-all w-full">
+                <span className="w-8 h-8 flex items-center justify-center rounded-lg bg-surface-alt group-hover:bg-border transition-all text-base">🦊</span>
+                Conectar wallet
+              </button>
+            </>
           )}
         </nav>
 
         {/* Cerrar sesión */}
-        <div className="px-3 py-4 border-t border-border">
+        <div className="px-3 py-3 border-t border-border">
           <button onClick={() => { logout(); setOpen(false); }}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-danger hover:bg-danger/10 transition-colors">
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-danger hover:bg-danger/10 transition-colors">
             Cerrar sesión
           </button>
         </div>
@@ -208,6 +284,15 @@ function CustodialUserMenu() {
 
   return (
     <div className="relative">
+      {/* Wallet explainer modal */}
+      {mounted && showWalletInfo && createPortal(
+        <WalletConnectModal
+          onConnect={doConnectWallet}
+          onClose={() => setShowWalletInfo(false)}
+        />,
+        document.body
+      )}
+
       {/* Trigger button */}
       <button
         onClick={() => setOpen(o => !o)}
@@ -264,39 +349,6 @@ function CustodialUserMenu() {
         </>
       )}
     </div>
-  );
-}
-
-// ── MetaMask button (for on-chain users) ──────────────────────────────────────
-
-function MetaMaskButton() {
-  const { address, isConnected } = useAccount();
-  const { connect, connectors, isPending } = useConnect();
-  const { disconnect } = useDisconnect();
-  const { balanceFormatted } = useVDNBalance();
-
-  if (isConnected && address) {
-    return (
-      <div className="flex items-center gap-2">
-        <div className="hidden sm:flex flex-col items-end">
-          <span className="text-xs text-muted">On-chain</span>
-          <span className="text-xs font-semibold text-accent-light">{balanceFormatted} VDN</span>
-        </div>
-        <div className="hidden sm:block"><AddVDNButton /></div>
-        <button onClick={() => disconnect()}
-          className="px-3 py-2 rounded-lg bg-surface-alt border border-border text-xs font-medium hover:border-accent transition-colors">
-          {address.slice(0, 6)}…{address.slice(-4)}
-        </button>
-      </div>
-    );
-  }
-
-  const connector = connectors.find(c => c.id === "injected") ?? connectors[0];
-  return (
-    <button onClick={() => connect({ connector })} disabled={isPending}
-      className="px-3 py-2 rounded-lg bg-surface-alt border border-border text-xs font-medium hover:border-accent transition-colors disabled:opacity-50">
-      {isPending ? "Conectando…" : "MetaMask"}
-    </button>
   );
 }
 

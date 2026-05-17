@@ -23,6 +23,8 @@ import {
 } from "@/lib/custodialApi";
 import { getMarket, type ApiMarket } from "@/lib/api";
 import { useWatchlist } from "@/hooks/useWatchlist";
+import { MultiOutcomePanel } from "@/components/MultiOutcomePanel";
+import { BtcLiveChart } from "@/components/BtcLiveChart";
 import {
   LineChart, Line, CartesianGrid, XAxis, YAxis,
   ResponsiveContainer, ReferenceDot,
@@ -234,9 +236,6 @@ function LmsrTradingPanel({
   const { user, token, balance, isLoggedIn, refreshBalance } = useAuth();
   const [tab, setTab]   = useState<"buy" | "sell">("buy");
 
-  useEffect(() => {
-    if (forceSell) setTab("sell");
-  }, [forceSell]);
   const [side, setSide] = useState<"yes" | "no">("yes");
   const [amount, setAmount] = useState("");
   const [sellShares, setSellShares] = useState("");
@@ -244,6 +243,14 @@ function LmsrTradingPanel({
   const [error, setError]   = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [myPos, setMyPos] = useState<LmsrPosition[]>([]);
+
+  useEffect(() => {
+    if (forceSell) {
+      setTab("sell");
+      const existing = myPos.find(p => p.shares > 0);
+      if (existing) setSide(existing.side as "yes" | "no");
+    }
+  }, [forceSell, myPos]);
 
   const vdnBalance = balance?.balance_vdn ?? user?.balance_vdn ?? 0;
   const gross = Number(amount) || 0;
@@ -330,7 +337,15 @@ function LmsrTradingPanel({
       <div className="flex items-center justify-between">
         <div className="flex gap-1 p-1 rounded-lg bg-background border border-border">
           {(["buy", "sell"] as const).map(t => (
-            <button key={t} onClick={() => { setTab(t); setError(null); setSuccess(null); }}
+            <button key={t} onClick={() => {
+                setTab(t);
+                setError(null);
+                setSuccess(null);
+                if (t === "sell") {
+                  const existing = myPos.find(p => p.shares > 0);
+                  if (existing) setSide(existing.side as "yes" | "no");
+                }
+              }}
               className={`px-4 py-1.5 rounded-md text-sm font-semibold transition-colors ${
                 tab === t ? "bg-surface text-foreground shadow-sm" : "text-muted hover:text-foreground"
               }`}>
@@ -344,18 +359,35 @@ function LmsrTradingPanel({
       </div>
 
       {/* SÍ / NO toggle */}
-      <div className="grid grid-cols-2 gap-3">
-        {(["yes", "no"] as const).map(s => (
-          <button key={s} onClick={() => setSide(s)}
-            className={`py-2.5 rounded-lg font-bold text-sm transition-all ${
-              s === "yes"
-                ? side === "yes" ? "bg-success text-white shadow-lg shadow-success/20" : "bg-success/10 text-success border border-success/30 hover:bg-success/20"
-                : side === "no"  ? "bg-danger text-white shadow-lg shadow-danger/20"  : "bg-danger/10 text-danger border border-danger/30 hover:bg-danger/20"
-            }`}>
-            {s === "yes" ? "SÍ" : "NO"}
-          </button>
-        ))}
-      </div>
+      {(() => {
+        const hasYes = tab === "buy" && myPos.some(p => p.side === "yes" && p.shares > 0);
+        const hasNo  = tab === "buy" && myPos.some(p => p.side === "no"  && p.shares > 0);
+        return (
+          <>
+            <div className="grid grid-cols-2 gap-3">
+              {(["yes", "no"] as const).map(s => {
+                const blocked = (s === "no" && hasYes && !hasNo) || (s === "yes" && hasNo && !hasYes);
+                return (
+                  <button key={s} onClick={() => !blocked && setSide(s)} disabled={blocked}
+                    title={blocked ? `Ya tienes posición en ${s === "no" ? "SÍ" : "NO"}` : undefined}
+                    className={`py-2.5 rounded-lg font-bold text-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
+                      s === "yes"
+                        ? side === "yes" ? "bg-success text-white shadow-lg shadow-success/20" : "bg-success/10 text-success border border-success/30 hover:bg-success/20"
+                        : side === "no"  ? "bg-danger text-white shadow-lg shadow-danger/20"  : "bg-danger/10 text-danger border border-danger/30 hover:bg-danger/20"
+                    }`}>
+                    {s === "yes" ? "SÍ" : "NO"}
+                  </button>
+                );
+              })}
+            </div>
+            {(hasYes || hasNo) && (
+              <p className="text-xs text-muted -mt-1">
+                Ya tienes posición en <span className="font-semibold">{hasYes ? "SÍ" : "NO"}</span> — no puedes apostar por el lado contrario en el mismo mercado.
+              </p>
+            )}
+          </>
+        );
+      })()}
 
       {error && (
         <div className="p-3 rounded-lg bg-danger/10 border border-danger/20 text-sm text-danger">{error}</div>
@@ -405,7 +437,7 @@ function LmsrTradingPanel({
             const profit   = received - gross;
             const roi      = gross > 0 ? (profit / gross) * 100 : 0;
             const isProfit = profit > 0;
-            const color    = side === "yes" ? "text-success" : "text-danger";
+            const color    = "text-success";
             const bg       = side === "yes" ? "bg-success/5 border-success/20" : "bg-danger/5 border-danger/20";
             return (
               <div className="space-y-2">
@@ -424,9 +456,11 @@ function LmsrTradingPanel({
                       {fmt2(gross)} apostado
                     </span>
                     <span className="text-muted">+</span>
-                    <span className={`px-2.5 py-1 rounded-lg font-semibold tabular-nums border ${
-                      side === "yes" ? "bg-success/10 border-success/20" : "bg-danger/10 border-danger/20"
-                    } ${isProfit ? "text-success" : "text-danger"}`}>
+                    <span className={`px-2.5 py-1 rounded-lg font-semibold tabular-nums border text-success ${
+                      isProfit
+                        ? "bg-success/10 border-success/20"
+                        : "bg-danger/10 border-danger/20"
+                    }`}>
                       {isProfit ? "+" : ""}{fmt2(profit)} ganancia
                     </span>
                     <span className="text-muted text-xs ml-auto">
@@ -925,15 +959,28 @@ export default function MarketDetail() {
         )}
       </div>
 
+      {/* ── BTC Live Chart (auto-markets) ── */}
+      {custodialMkt.isBtcAuto && custodialMkt.btcTargetPrice != null && (
+        <div className="mb-4">
+          <BtcLiveChart
+            targetPrice={custodialMkt.btcTargetPrice}
+            closeTime={effectiveCloseTime}
+            marketStatus={custodialMkt.status}
+          />
+        </div>
+      )}
+
       {/* ── LMSR Price — lo más importante ── */}
       <div className="p-5 rounded-xl bg-surface border border-border mb-4">
         <PriceBar pctYes={pctYes} pctNo={pctNo} />
         <div className="mt-3 text-xs text-muted text-center">
           Actualiza cada 5 s · Precio LMSR en tiempo real
         </div>
-        <div className="mt-4">
-          <PriceChart history={history} />
-        </div>
+        {!custodialMkt.isBtcAuto && (
+          <div className="mt-4">
+            <PriceChart history={history} />
+          </div>
+        )}
       </div>
 
       {/* Pool volume */}
@@ -966,12 +1013,21 @@ export default function MarketDetail() {
       {/* Buy/Sell panel */}
       {isOpen && !isClosed && (
         <div id="trading-panel" className="mb-6">
-          <LmsrTradingPanel
-            marketId={numId} qYes={qYes} qNo={qNo}
-            isOpen={isOpen && !isClosed}
-            forceSell={forceSell}
-            onTrade={() => { loadPrice(); setForceSell(false); }}
-          />
+          {custodialMkt?.marketType === "multi" && custodialMkt.outcomes ? (
+            <MultiOutcomePanel
+              marketId={numId}
+              outcomes={custodialMkt.outcomes}
+              isOpen={isOpen && !isClosed}
+              onTrade={loadPrice}
+            />
+          ) : (
+            <LmsrTradingPanel
+              marketId={numId} qYes={qYes} qNo={qNo}
+              isOpen={isOpen && !isClosed}
+              forceSell={forceSell}
+              onTrade={() => { loadPrice(); setForceSell(false); }}
+            />
+          )}
         </div>
       )}
 

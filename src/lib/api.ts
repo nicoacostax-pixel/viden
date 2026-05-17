@@ -27,6 +27,11 @@ export type ApiMarket = {
   statusReview: string | null;
   resolutionCriteria: string | null;
   creatorFeeEarned: number;
+  marketType: "binary" | "multi";
+  outcomes: { id: number; label: string; shares: number; ord: number }[] | null;
+  resolvedOutcomeId: number | null;
+  isBtcAuto: boolean;
+  btcTargetPrice: number | null;
 };
 
 export type ApiPosition = {

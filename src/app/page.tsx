@@ -11,6 +11,7 @@ import { MarketCard, getCategoryEmoji } from "@/components/MarketCard";
 import { getMarkets, toMarketData, searchMarketByPublicId, type ApiMarket } from "@/lib/api";
 import { apiGetPriceHistory, type PriceHistoryPoint } from "@/lib/custodialApi";
 import { useWatchlist } from "@/hooks/useWatchlist";
+import { DailyMarket } from "@/components/DailyMarket";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -640,6 +641,9 @@ export default function Home() {
           </button>
         ))}
       </div>
+
+      {/* Mercado del día */}
+      {!isLoading && !error && <DailyMarket />}
 
       {/* Hero carousel */}
       {!isLoading && !error && filteredByCategory.length > 0 && (

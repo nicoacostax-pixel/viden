@@ -56,6 +56,8 @@ export type WalletBalance = {
   balance_usd_equiv: number;
   total_deposited_usd: number;
   total_wagered_vdn: number;
+  reinvest_bonus_active: boolean;
+  reinvest_bonus_expires_at: number | null;
 };
 
 export async function apiGetBalance(token: string) {
@@ -133,7 +135,7 @@ export type BetResult = BuyResult;
 export async function apiBuy(
   token: string,
   market_id: number,
-  side: "yes" | "no",
+  side: string,
   amount_vdn: number,
   max_cost?: number,
 ) {
@@ -406,6 +408,12 @@ export async function apiGetAdminUsers(token: string) {
   }) as Promise<{ users: AdminUser[] }>;
 }
 
+export async function apiGetAllOpenMarkets(token: string) {
+  return req("/api/admin/custodial/all-open-markets", {
+    headers: authHeaders(token),
+  }) as Promise<{ markets: MarketToResolve[]; count: number }>;
+}
+
 export async function apiGetPendingMarkets(token: string) {
   return req("/api/admin/custodial/pending-markets", {
     headers: authHeaders(token),
@@ -425,4 +433,198 @@ export async function apiRejectMarket(token: string, market_id: number, reason?:
     headers: authHeaders(token),
     body: JSON.stringify({ reason }),
   }) as Promise<{ ok: boolean; market_id: number; reason: string | null }>;
+}
+
+export async function apiFeatureMarket(token: string, market_id: number) {
+  return req(`/api/admin/custodial/markets/${market_id}/feature`, {
+    method: "POST",
+    headers: authHeaders(token),
+  }) as Promise<{ ok: boolean; market_id: number; is_featured: boolean }>;
+}
+
+// ── Leaderboard ───────────────────────────────────────────────────────────────
+
+export type LeaderboardEntry = {
+  rank:          number;
+  user_id:       number;
+  username:      string;
+  total_wagered: number;
+  total_won:     number;
+  pnl_vdn:       number;
+  bet_count:     number;
+};
+
+export async function apiGetWeeklyLeaderboard(limit = 20) {
+  return req(`/api/leaderboard/weekly?limit=${limit}`) as Promise<{
+    leaderboard: LeaderboardEntry[];
+    period: string;
+    since: number;
+  }>;
+}
+
+export async function apiGetAllTimeLeaderboard(limit = 20) {
+  return req(`/api/leaderboard/all-time?limit=${limit}`) as Promise<{
+    leaderboard: LeaderboardEntry[];
+    period: string;
+  }>;
+}
+
+// ── Achievements ──────────────────────────────────────────────────────────────
+
+export type Achievement = {
+  slug:        string;
+  name:        string;
+  description: string;
+  icon:        string;
+  rarity:      "common" | "rare" | "epic" | "legendary";
+  earned_at?:  number;
+};
+
+export async function apiGetAchievements() {
+  return req("/api/achievements") as Promise<{ achievements: Achievement[] }>;
+}
+
+export async function apiGetMyAchievements(token: string) {
+  return req("/api/achievements/me", { headers: authHeaders(token) }) as Promise<{
+    earned: Achievement[];
+    total: number;
+  }>;
+}
+
+// ── Tournaments ───────────────────────────────────────────────────────────────
+
+export type Tournament = {
+  id:               number;
+  name:             string;
+  description:      string | null;
+  start_ts:         number;
+  end_ts:           number;
+  entry_fee_vdn:    number;
+  prize_pool_vdn:   number;
+  status:           "pending" | "active" | "finished";
+  max_participants: number | null;
+  participant_count: number;
+  is_joinable:      boolean;
+  time_left_s:      number;
+};
+
+export type TournamentEntry = {
+  rank:       number;
+  user_id:    number;
+  username:   string;
+  pnl_vdn:    number;
+  bets_count: number;
+  joined_at:  number;
+};
+
+export async function apiGetTournaments() {
+  return req("/api/tournaments") as Promise<{ tournaments: Tournament[] }>;
+}
+
+export async function apiGetTournament(id: number) {
+  return req(`/api/tournaments/${id}`) as Promise<{
+    tournament: Tournament;
+    leaderboard: TournamentEntry[];
+    prizes: { rank: number; prize_vdn: number; user_id: number | null; paid: number }[];
+  }>;
+}
+
+export async function apiJoinTournament(token: string, id: number) {
+  return req(`/api/tournaments/${id}/join`, {
+    method: "POST",
+    headers: authHeaders(token),
+  }) as Promise<{ ok: boolean; tournament_id: number; entry_fee_paid: number }>;
+}
+
+export async function apiGetMyTournamentEntry(token: string, id: number) {
+  return req(`/api/tournaments/${id}/my-entry`, { headers: authHeaders(token) }) as Promise<{
+    entry: TournamentEntry | null;
+  }>;
+}
+
+export async function apiUpdateProfile(token: string, data: { username?: string; avatar_url?: string }) {
+  return req("/api/auth/profile", {
+    method: "PATCH",
+    headers: authHeaders(token),
+    body: JSON.stringify(data),
+  }) as Promise<{ user: Record<string, unknown>; token: string }>;
+}
+
+export async function apiChangePassword(token: string, current_password: string, new_password: string) {
+  return req("/api/auth/password", {
+    method: "PATCH",
+    headers: authHeaders(token),
+    body: JSON.stringify({ current_password, new_password }),
+  }) as Promise<{ message: string }>;
+}
+
+export async function apiGetMyBets(token: string) {
+  return req("/api/bets/my-bets", { headers: authHeaders(token) }) as Promise<{
+    bets: Array<{
+      id: number; market_id: number; question: string; side: string;
+      amount_vdn_gross: number; amount_vdn_net: number; reward_vdn: number;
+      status: string; created_at: number; emoji: string | null;
+    }>;
+  }>;
+}
+
+export async function apiDeleteMarket(token: string, market_id: number) {
+  return req(`/api/admin/custodial/markets/${market_id}`, {
+    method: "DELETE",
+    headers: authHeaders(token),
+  }) as Promise<{ message: string }>;
+}
+
+// ── Withdrawals ───────────────────────────────────────────────────────────────
+
+export type WithdrawResult = {
+  amount_vdn: number;
+  amount_usd: number;
+  tx_hash: string;
+  to_address: string;
+  new_balance_vdn: number;
+  explorer_url: string;
+};
+
+export async function apiWithdraw(token: string, amount_vdn: number, to_address: string) {
+  return req("/api/wallet/withdraw", {
+    method: "POST",
+    headers: authHeaders(token),
+    body: JSON.stringify({ amount_vdn, to_address }),
+  }) as Promise<WithdrawResult>;
+}
+
+export type Transaction = {
+  id: number;
+  type: string;
+  amount_usd: number | null;
+  amount_vdn: number | null;
+  description: string;
+  status: string;
+  tx_hash: string | null;
+  to_address: string | null;
+  created_at: number;
+};
+
+export async function apiGetTransactions(token: string) {
+  return req("/api/wallet/transactions", {
+    headers: authHeaders(token),
+  }) as Promise<{ transactions: Transaction[] }>;
+}
+
+export type AdminMarket = {
+  market_id: number; public_id: string | null; question: string;
+  category: string | null; emoji: string | null; status: string;
+  market_type: string; close_time: number; is_user_created: number;
+  total_pool: number; creator_username: string | null;
+};
+
+export async function apiGetAllMarkets(token: string, q?: string, status?: string) {
+  const params = new URLSearchParams();
+  if (q)      params.set("q", q);
+  if (status) params.set("status", status);
+  const qs = params.toString();
+  return req(`/api/admin/custodial/all-markets${qs ? `?${qs}` : ""}`, {
+    headers: authHeaders(token),
+  }) as Promise<{ markets: AdminMarket[]; count: number }>;
 }
