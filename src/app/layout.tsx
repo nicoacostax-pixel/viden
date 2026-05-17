@@ -23,7 +23,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="es" suppressHydrationWarning>
       {/* Runs before paint — reads localStorage and applies dark class to avoid flash */}
       <head>
-        <script dangerouslySetInnerHTML={{ __html: `(function(){var t=localStorage.getItem('viden-theme');document.documentElement.classList.toggle('dark',!t||t==='dark');})();` }} />
+        <script dangerouslySetInnerHTML={{ __html: `(function(){var t=localStorage.getItem('viden-theme');document.documentElement.classList.toggle('dark',t==='dark');})();` }} />
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#4C7A58" />
         <meta name="mobile-web-app-capable" content="yes" />
