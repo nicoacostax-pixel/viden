@@ -574,8 +574,15 @@ export default function Home() {
     return rawMarkets.filter(m => matchCategory(m) === activeCategory);
   }, [rawMarkets, activeCategory, watchlistIds]);
 
+  // Separate BTC live market from the regular grid
+  const openBtcMarket = useMemo(
+    () => rawMarkets.find(m => m.isBtcAuto && m.status === "OPEN") ?? null,
+    [rawMarkets]
+  );
+
   const displayedMarkets = useMemo(() => {
-    let list = filteredByCategory;
+    // Never show BTC auto-markets in the regular grid (open or resolved)
+    let list = filteredByCategory.filter(m => !m.isBtcAuto);
     if (search.trim()) {
       const q = search.toLowerCase();
       list = list.filter(m => m.question.toLowerCase().includes(q));
@@ -641,6 +648,33 @@ export default function Home() {
           </button>
         ))}
       </div>
+
+      {/* BTC en vivo */}
+      {!isLoading && !error && openBtcMarket && (
+        <Link href={`/market/${openBtcMarket.marketId}`} className="block mb-5">
+          <div className="rounded-xl border border-warning/40 bg-warning/5 px-4 py-3 flex items-center justify-between hover:bg-warning/10 transition-colors">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">₿</span>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-bold text-foreground">BTC/USD en vivo</span>
+                  <span className="flex items-center gap-1 text-[10px] text-success font-medium">
+                    <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse inline-block" />
+                    EN VIVO
+                  </span>
+                </div>
+                <div className="text-xs text-muted mt-0.5 truncate max-w-xs">{openBtcMarket.question}</div>
+              </div>
+            </div>
+            <div className="text-right shrink-0 ml-3">
+              <div className="text-xs text-muted">Meta</div>
+              <div className="text-sm font-bold text-warning">
+                ${openBtcMarket.btcTargetPrice?.toLocaleString("en") ?? "—"}
+              </div>
+            </div>
+          </div>
+        </Link>
+      )}
 
       {/* Mercado del día */}
       {!isLoading && !error && <DailyMarket />}

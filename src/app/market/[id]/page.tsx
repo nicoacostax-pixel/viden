@@ -861,14 +861,14 @@ export default function MarketDetail() {
     if (!custodialMkt?.isBtcAuto) return;
     const closeTime = custodialMkt.closeTime;
     const msUntilClose = closeTime * 1000 - Date.now();
-    if (msUntilClose > 60_000) return; // only watch if closing within 1 min
 
-    // Start polling for the next BTC market once this one closes
+    const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
     let pollId: ReturnType<typeof setInterval>;
+
     const startPolling = () => {
       pollId = setInterval(async () => {
         try {
-          const res  = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001"}/api/btc/markets`);
+          const res  = await fetch(`${API_URL}/api/btc/markets`);
           const data = await res.json();
           const next = (data.markets as { market_id: number; status: string }[])
             .find(m => m.market_id !== numId && m.status === "OPEN");
@@ -880,8 +880,8 @@ export default function MarketDetail() {
       }, 3_000);
     };
 
-    // Wait until the market actually closes, then start polling
-    const delay = Math.max(msUntilClose, 0) + 5_000; // 5s grace for backend to create next
+    // Wait until the market closes + 8s grace for backend to create next market
+    const delay = Math.max(msUntilClose, 0) + 8_000;
     const timeoutId = setTimeout(startPolling, delay);
     return () => { clearTimeout(timeoutId); clearInterval(pollId); };
   }, [custodialMkt?.isBtcAuto, custodialMkt?.closeTime, numId, router]);
