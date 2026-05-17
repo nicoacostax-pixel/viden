@@ -200,6 +200,7 @@ export function BtcLiveChart({ targetPrice, closeTime, marketStatus }: Props) {
                 axisLine={false}
                 interval="preserveStartEnd"
                 tickCount={4}
+                padding={{ left: 0, right: 0 }}
               />
               <YAxis
                 orientation="right"
