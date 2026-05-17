@@ -172,19 +172,21 @@ export function BtcLiveChart({ targetPrice, closeTime, marketStatus }: Props) {
                 }}
               />
               {/* Target price reference line */}
-              <ReferenceLine
-                y={targetPrice}
-                stroke="#F59E0B"
-                strokeDasharray="5 3"
-                strokeWidth={2}
-                label={{
-                  value: `Meta $${targetPrice.toLocaleString("en")}`,
-                  position: "insideTopRight",
-                  fontSize: 9,
-                  fill: "#F59E0B",
-                  offset: 4,
-                }}
-              />
+              {targetPrice > 0 && (
+                <ReferenceLine
+                  y={targetPrice}
+                  stroke="#F59E0B"
+                  strokeDasharray="5 3"
+                  strokeWidth={2}
+                  label={{
+                    value: `Meta $${targetPrice.toLocaleString("en")}`,
+                    position: "insideTopRight",
+                    fontSize: 9,
+                    fill: "#F59E0B",
+                    offset: 4,
+                  }}
+                />
+              )}
               <Area
                 type="monotone"
                 dataKey="price"

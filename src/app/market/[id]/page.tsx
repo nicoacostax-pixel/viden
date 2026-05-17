@@ -960,10 +960,10 @@ export default function MarketDetail() {
       </div>
 
       {/* ── BTC Live Chart (auto-markets) ── */}
-      {custodialMkt.isBtcAuto && custodialMkt.btcTargetPrice != null && (
+      {custodialMkt.isBtcAuto && (
         <div className="mb-4">
           <BtcLiveChart
-            targetPrice={custodialMkt.btcTargetPrice}
+            targetPrice={custodialMkt.btcTargetPrice ?? 0}
             closeTime={effectiveCloseTime}
             marketStatus={custodialMkt.status}
           />
