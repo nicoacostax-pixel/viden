@@ -170,7 +170,7 @@ export function BtcLiveChart({ targetPrice, closeTime, marketStatus }: Props) {
           </div>
         ) : (
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={points} margin={{ top: 4, right: 52, bottom: 0, left: 0 }}>
+            <AreaChart data={points} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
               <defs>
                 <linearGradient id="btcGrad" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%"  stopColor="#F59E0B" stopOpacity={0.2} />
@@ -190,11 +190,11 @@ export function BtcLiveChart({ targetPrice, closeTime, marketStatus }: Props) {
               <YAxis
                 orientation="right"
                 domain={[Math.floor(yMin), Math.ceil(yMax)]}
-                tickFormatter={v => `$${(v as number).toLocaleString("en")}`}
+                tickFormatter={v => `$${((v as number) / 1000).toFixed(1)}k`}
                 tick={{ fill: "#9CA3AF", fontSize: 9 }}
                 tickLine={false}
                 axisLine={false}
-                width={76}
+                width={44}
                 tickCount={5}
               />
               <Tooltip
@@ -217,8 +217,8 @@ export function BtcLiveChart({ targetPrice, closeTime, marketStatus }: Props) {
                   strokeDasharray="5 3"
                   strokeWidth={2}
                   label={{
-                    value: `Meta $${targetPrice.toLocaleString("en")}`,
-                    position: "insideTopRight",
+                    value: `Meta`,
+                    position: "insideTopLeft",
                     fontSize: 9,
                     fill: "#F59E0B",
                     offset: 4,

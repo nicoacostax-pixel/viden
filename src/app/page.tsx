@@ -294,8 +294,11 @@ function TrendingSidebar({
 
 // ── HeroSection ───────────────────────────────────────────────────────────────
 
-function HeroSection({ markets }: { markets: ApiMarket[] }) {
-  const featured = useMemo(() => markets.slice(0, 11), [markets]);
+function HeroSection({ markets, btcMarket }: { markets: ApiMarket[]; btcMarket?: ApiMarket | null }) {
+  const featured = useMemo(() => {
+    const base = btcMarket ? [btcMarket, ...markets.filter(m => m.marketId !== btcMarket.marketId)] : markets;
+    return base.slice(0, 11);
+  }, [markets, btcMarket]);
   const [activeIdx, setActiveIdx] = useState(0);
   const [fading, setFading]       = useState(false);
   const [paused, setPaused]       = useState(false);
@@ -653,39 +656,12 @@ export default function Home() {
         ))}
       </div>
 
-      {/* BTC en vivo */}
-      {!isLoading && !error && openBtcMarket && (
-        <Link href={`/market/${openBtcMarket.marketId}`} className="block mb-5">
-          <div className="rounded-xl border border-warning/40 bg-warning/5 px-4 py-3 flex items-center justify-between hover:bg-warning/10 transition-colors">
-            <div className="flex items-center gap-3">
-              <span className="text-2xl">₿</span>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-bold text-foreground">BTC/USD en vivo</span>
-                  <span className="flex items-center gap-1 text-[10px] text-success font-medium">
-                    <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse inline-block" />
-                    EN VIVO
-                  </span>
-                </div>
-                <div className="text-xs text-muted mt-0.5 truncate max-w-xs">{openBtcMarket.question}</div>
-              </div>
-            </div>
-            <div className="text-right shrink-0 ml-3">
-              <div className="text-xs text-muted">Meta</div>
-              <div className="text-sm font-bold text-warning">
-                ${openBtcMarket.btcTargetPrice?.toLocaleString("en") ?? "—"}
-              </div>
-            </div>
-          </div>
-        </Link>
-      )}
-
       {/* Mercado del día */}
       {!isLoading && !error && <DailyMarket />}
 
-      {/* Hero carousel */}
-      {!isLoading && !error && filteredByCategory.length > 0 && (
-        <HeroSection markets={filteredByCategory} />
+      {/* Hero carousel — BTC market always first when active */}
+      {!isLoading && !error && (filteredByCategory.length > 0 || openBtcMarket) && (
+        <HeroSection markets={filteredByCategory} btcMarket={openBtcMarket} />
       )}
 
       {/* Loading */}
