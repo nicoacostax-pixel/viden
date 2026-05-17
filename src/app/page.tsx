@@ -165,7 +165,7 @@ function CarouselCard({ market, fading }: { market: ApiMarket; fading: boolean }
           </div>
           <div style={{ pointerEvents: 'none' }}>
           <ResponsiveContainer width="100%" height={150}>
-            <LineChart data={chartData} margin={{ top: 6, right: 44, bottom: 4, left: 0 }}>
+            <LineChart data={chartData} margin={{ top: 6, right: 0, bottom: 4, left: 0 }}>
               <CartesianGrid
                 stroke="rgba(255,255,255,0.06)"
                 strokeDasharray="3 4"
@@ -179,6 +179,7 @@ function CarouselCard({ market, fading }: { market: ApiMarket; fading: boolean }
                 axisLine={false}
                 interval="preserveStartEnd"
                 tickCount={4}
+                padding={{ left: 0, right: 0 }}
               />
               <YAxis
                 orientation="right"
@@ -188,7 +189,7 @@ function CarouselCard({ market, fading }: { market: ApiMarket; fading: boolean }
                 tick={{ fill: "#6B7280", fontSize: 9 }}
                 tickLine={false}
                 axisLine={false}
-                width={34}
+                width={32}
               />
               <Line
                 type="monotone"
