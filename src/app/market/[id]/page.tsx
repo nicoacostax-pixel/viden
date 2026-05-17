@@ -880,8 +880,8 @@ export default function MarketDetail() {
       }, 2_000);
     };
 
-    // Wait until the market closes + 35s grace (30s resolution check interval + buffer)
-    const delay = Math.max(msUntilClose, 0) + 35_000;
+    // Start polling as soon as the market closes (backend resolves within ~5s)
+    const delay = Math.max(msUntilClose, 0);
     const timeoutId = setTimeout(startPolling, delay);
     return () => { clearTimeout(timeoutId); clearInterval(pollId); };
   }, [custodialMkt?.isBtcAuto, custodialMkt?.closeTime, numId, router]);
