@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid,
-  ResponsiveContainer, ReferenceLine, Tooltip,
+  ResponsiveContainer, ReferenceLine, ReferenceDot, Tooltip,
 } from "recharts";
 
 const API      = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
@@ -33,6 +33,20 @@ function fmtTime(ts: number) {
   return new Date(ts).toLocaleTimeString("es", {
     hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false,
   });
+}
+
+// Pulsing live dot rendered at the tip of the price line
+function LiveDot({ cx, cy }: { cx?: number; cy?: number }) {
+  if (cx == null || cy == null) return null;
+  return (
+    <g>
+      <circle cx={cx} cy={cy} r={5} fill="#F59E0B" />
+      <circle cx={cx} cy={cy} r={9} fill="#F59E0B" fillOpacity={0.35}>
+        <animate attributeName="r" values="6;14;6" dur="1.8s" repeatCount="indefinite" />
+        <animate attributeName="fill-opacity" values="0.4;0;0.4" dur="1.8s" repeatCount="indefinite" />
+      </circle>
+    </g>
+  );
 }
 
 interface Props { targetPrice: number; closeTime: number; marketStatus: string }
@@ -225,6 +239,18 @@ export function BtcLiveChart({ targetPrice, closeTime, marketStatus }: Props) {
                   }}
                 />
               )}
+              {/* Pulsing dot at the tip of the line */}
+              {points.length > 0 && isOpen && (() => {
+                const last = points[points.length - 1];
+                return (
+                  <ReferenceDot
+                    x={last.ts}
+                    y={last.price}
+                    r={0}
+                    shape={(p: { cx?: number; cy?: number }) => <LiveDot cx={p.cx} cy={p.cy} />}
+                  />
+                );
+              })()}
               <Area
                 type="monotoneX"
                 dataKey="price"
