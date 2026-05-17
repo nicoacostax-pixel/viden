@@ -105,60 +105,44 @@ export default function PWAManager() {
           from { transform: translateY(100%); opacity: 0; }
           to   { transform: translateY(0);    opacity: 1; }
         }
-        .pwa-sheet {
-          animation: pwa-slide-up 0.35s cubic-bezier(0.32, 0.72, 0, 1) both;
-        }
-        .pwa-install-btn {
-          background: linear-gradient(135deg, #3A9E6A, #2D7A52);
-          transition: filter 0.15s, transform 0.15s;
-        }
-        .pwa-install-btn:hover  { filter: brightness(1.1); transform: scale(1.02); }
+        .pwa-sheet { animation: pwa-slide-up 0.35s cubic-bezier(0.32, 0.72, 0, 1) both; }
+        .pwa-install-btn { background: #3D8A56; transition: filter 0.15s, transform 0.15s; }
+        .pwa-install-btn:hover  { filter: brightness(1.08); transform: scale(1.02); }
         .pwa-install-btn:active { transform: scale(0.97); }
-        .pwa-dismiss-btn:hover  { color: #E2E8F0; }
       `}</style>
 
       {/* Backdrop */}
-      <div
-        onClick={handleDismiss}
-        style={{
-          position: 'fixed', inset: 0, zIndex: 999,
-          background: 'rgba(0,0,0,0.45)',
-          backdropFilter: 'blur(2px)',
-        }}
-      />
+      <div onClick={handleDismiss} style={{ position: 'fixed', inset: 0, zIndex: 999, background: 'rgba(0,0,0,0.35)', backdropFilter: 'blur(2px)' }} />
 
       {/* Sheet */}
       <div className="pwa-sheet" style={{
         position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 1000,
-        background: 'rgba(19,19,31,0.92)',
-        backdropFilter: 'blur(24px)',
-        WebkitBackdropFilter: 'blur(24px)',
-        borderTop: '1px solid rgba(255,255,255,0.08)',
+        background: '#FFFFFF',
+        borderTop: '1.5px solid #D4DDD5',
         borderRadius: '24px 24px 0 0',
-        padding: '12px 20px 32px',
-        boxShadow: '0 -8px 40px rgba(79,70,229,0.25)',
+        padding: '12px 20px 36px',
+        boxShadow: '0 -8px 40px rgba(61,138,86,0.12)',
       }}>
         {/* Drag handle */}
-        <div style={{ width: 36, height: 4, background: 'rgba(255,255,255,0.15)', borderRadius: 99, margin: '0 auto 20px' }} />
+        <div style={{ width: 36, height: 4, background: '#D4DDD5', borderRadius: 99, margin: '0 auto 20px' }} />
 
         {!showIOSInstructions ? (
           <>
             {/* Header */}
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, marginBottom: 20 }}>
-              {/* Icon */}
               <div style={{
-                width: 52, height: 52, borderRadius: 14, flexShrink: 0,
-                background: 'linear-gradient(135deg, #4C7A58, #3B6145)',
+                width: 54, height: 54, borderRadius: 14, flexShrink: 0,
+                background: '#3D8A56',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 26, boxShadow: '0 4px 16px rgba(79,70,229,0.4)',
+                fontSize: 26, boxShadow: '0 4px 16px rgba(61,138,86,0.25)',
               }}>
                 🎁
               </div>
               <div style={{ flex: 1 }}>
-                <div style={{ color: '#FFFFFF', fontWeight: 700, fontSize: 17, lineHeight: 1.3, marginBottom: 4 }}>
+                <div style={{ color: '#0F1E11', fontWeight: 700, fontSize: 17, lineHeight: 1.3, marginBottom: 4 }}>
                   Instala Viden y gana 500 VDN
                 </div>
-                <div style={{ color: '#8B8BA0', fontSize: 13, lineHeight: 1.4 }}>
+                <div style={{ color: '#5A6B5C', fontSize: 13, lineHeight: 1.4 }}>
                   Acceso rápido desde tu pantalla de inicio · equivale a ~$5 USD gratis
                 </div>
               </div>
@@ -168,9 +152,9 @@ export default function PWAManager() {
             <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
               {['⚡ Más rápido', '📴 Funciona sin internet', '🔔 Notificaciones'].map(t => (
                 <span key={t} style={{
-                  fontSize: 11, fontWeight: 600, color: '#A5B4FC',
-                  background: 'rgba(79,70,229,0.15)',
-                  border: '1px solid rgba(99,102,241,0.3)',
+                  fontSize: 11, fontWeight: 600, color: '#3D8A56',
+                  background: 'rgba(61,138,86,0.08)',
+                  border: '1px solid rgba(61,138,86,0.25)',
                   borderRadius: 99, padding: '4px 10px',
                 }}>
                   {t}
@@ -185,22 +169,18 @@ export default function PWAManager() {
                 className="pwa-install-btn"
                 style={{
                   flex: 1, border: 'none', borderRadius: 14,
-                  padding: '14px 0', color: '#fff',
+                  padding: '15px 0', color: '#fff',
                   fontWeight: 700, fontSize: 15, cursor: 'pointer',
-                  letterSpacing: 0.2,
                 }}
               >
                 📲 Instalar ahora
               </button>
               <button
                 onClick={handleDismiss}
-                className="pwa-dismiss-btn"
                 style={{
-                  background: 'rgba(255,255,255,0.07)',
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  borderRadius: 14, padding: '14px 18px',
-                  color: '#6B7280', fontSize: 14, cursor: 'pointer',
-                  transition: 'color 0.15s',
+                  background: '#F0F4F0', border: '1.5px solid #D4DDD5',
+                  borderRadius: 14, padding: '15px 18px',
+                  color: '#5A6B5C', fontSize: 14, cursor: 'pointer',
                 }}
               >
                 Ahora no
@@ -211,11 +191,11 @@ export default function PWAManager() {
           <>
             <div style={{ textAlign: 'center', marginBottom: 24 }}>
               <div style={{ fontSize: 36, marginBottom: 8 }}>📲</div>
-              <div style={{ color: '#FFFFFF', fontWeight: 700, fontSize: 18 }}>Instala Viden en tu iPhone</div>
-              <div style={{ color: '#8B8BA0', fontSize: 13, marginTop: 4 }}>Sigue estos 3 pasos rápidos</div>
+              <div style={{ color: '#0F1E11', fontWeight: 700, fontSize: 18 }}>Instala Viden en tu iPhone</div>
+              <div style={{ color: '#5A6B5C', fontSize: 13, marginTop: 4 }}>Sigue estos 3 pasos rápidos</div>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 24 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 24 }}>
               {[
                 { n: '1', icon: '⬆️', title: 'Toca el botón Compartir', sub: 'En la barra inferior de Safari' },
                 { n: '2', icon: '➕', title: 'Añadir a pantalla de inicio', sub: 'Desplázate hasta encontrar la opción' },
@@ -223,23 +203,22 @@ export default function PWAManager() {
               ].map(step => (
                 <div key={step.n} style={{
                   display: 'flex', alignItems: 'center', gap: 14,
-                  background: 'rgba(255,255,255,0.04)',
-                  border: '1px solid rgba(255,255,255,0.07)',
+                  background: '#F8FAF8', border: '1.5px solid #D4DDD5',
                   borderRadius: 14, padding: '12px 14px',
                 }}>
                   <div style={{
                     width: 34, height: 34, flexShrink: 0,
-                    background: 'linear-gradient(135deg, #4C7A58, #3B6145)',
+                    background: '#3D8A56',
                     borderRadius: 10, display: 'flex', alignItems: 'center',
                     justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 15,
                   }}>
                     {step.n}
                   </div>
                   <div>
-                    <div style={{ color: '#E2E8F0', fontWeight: 600, fontSize: 14 }}>
+                    <div style={{ color: '#0F1E11', fontWeight: 600, fontSize: 14 }}>
                       {step.icon} {step.title}
                     </div>
-                    <div style={{ color: '#6B7280', fontSize: 12, marginTop: 2 }}>{step.sub}</div>
+                    <div style={{ color: '#5A6B5C', fontSize: 12, marginTop: 2 }}>{step.sub}</div>
                   </div>
                 </div>
               ))}
@@ -248,10 +227,10 @@ export default function PWAManager() {
             <button
               onClick={handleDismiss}
               style={{
-                width: '100%', background: 'rgba(255,255,255,0.06)',
-                border: '1px solid rgba(255,255,255,0.08)',
+                width: '100%', background: '#F0F4F0',
+                border: '1.5px solid #D4DDD5',
                 borderRadius: 14, padding: 14,
-                color: '#6B7280', fontSize: 15, cursor: 'pointer',
+                color: '#5A6B5C', fontSize: 15, cursor: 'pointer',
               }}
             >
               Ahora no
