@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useAccount } from "wagmi";
 import Link from "next/link";
 import {
@@ -841,6 +841,7 @@ function MarketTabs({ marketId }: { marketId: number }) {
 
 export default function MarketDetail() {
   const params   = useParams();
+  const router   = useRouter();
   const numId    = Number(params.id as string);
   const { isLoggedIn } = useAuth();
 
@@ -854,6 +855,36 @@ export default function MarketDetail() {
 
   // Sell panel trigger from position card
   const [forceSell, setForceSell] = useState(false);
+
+  // BTC auto-market: redirect to next market when this one closes
+  useEffect(() => {
+    if (!custodialMkt?.isBtcAuto) return;
+    const closeTime = custodialMkt.closeTime;
+    const msUntilClose = closeTime * 1000 - Date.now();
+    if (msUntilClose > 60_000) return; // only watch if closing within 1 min
+
+    // Start polling for the next BTC market once this one closes
+    let pollId: ReturnType<typeof setInterval>;
+    const startPolling = () => {
+      pollId = setInterval(async () => {
+        try {
+          const res  = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001"}/api/btc/markets`);
+          const data = await res.json();
+          const next = (data.markets as { market_id: number; status: string }[])
+            .find(m => m.market_id !== numId && m.status === "OPEN");
+          if (next) {
+            clearInterval(pollId);
+            router.push(`/market/${next.market_id}`);
+          }
+        } catch { /* ignore */ }
+      }, 3_000);
+    };
+
+    // Wait until the market actually closes, then start polling
+    const delay = Math.max(msUntilClose, 0) + 5_000; // 5s grace for backend to create next
+    const timeoutId = setTimeout(startPolling, delay);
+    return () => { clearTimeout(timeoutId); clearInterval(pollId); };
+  }, [custodialMkt?.isBtcAuto, custodialMkt?.closeTime, numId, router]);
 
   const loadPrice = useCallback(() => {
     apiGetMarketPrice(numId).then(setLmsrPrice).catch(() => {});
