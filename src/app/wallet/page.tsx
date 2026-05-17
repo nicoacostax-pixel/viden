@@ -752,13 +752,13 @@ function WalletInner() {
 
       {/* Install bonus card */}
       {showInstallBonus && (
-        <div style={{ background: 'linear-gradient(135deg, #4F46E5, #7C3AED)', borderRadius: '16px', padding: '20px', display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+        <div style={{ background: 'linear-gradient(135deg, #4C7A58, #3B6145)', borderRadius: '16px', padding: '20px', display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
           <span style={{ fontSize: '36px' }}>🎁</span>
           <div style={{ flex: 1 }}>
             <div style={{ color: 'white', fontWeight: 'bold', fontSize: '16px' }}>500 VDN esperándote</div>
             <div style={{ color: '#C4B5FD', fontSize: '13px' }}>Instala Viden como app · Valor: $5.00 USD · Solo una vez</div>
           </div>
-          <button onClick={() => window.dispatchEvent(new Event('pwa-install-trigger'))} style={{ background: '#10B981', color: 'white', border: 'none', borderRadius: '10px', padding: '10px 14px', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer' }}>
+          <button onClick={() => window.dispatchEvent(new Event('pwa-install-trigger'))} style={{ background: '#3A9E6A', color: 'white', border: 'none', borderRadius: '10px', padding: '10px 14px', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer' }}>
             📲 Instalar
           </button>
         </div>

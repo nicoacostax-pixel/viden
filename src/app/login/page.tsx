@@ -34,7 +34,7 @@ export default function LoginPage() {
       <div className="text-center mb-8">
         <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-accent/10 border border-accent/20 mb-4">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" className="w-8 h-8">
-            <path fill="#818CF8" d="M 4 47 C 12 49, 24 73, 37 79 C 46 83, 55 64, 66 38 L 79 10 L 97 2 L 86 18 L 76 42 C 65 66, 54 83, 42 86 C 30 89, 17 68, 9 57 Z"/>
+            <path fill="#7DAF8D" d="M 4 47 C 12 49, 24 73, 37 79 C 46 83, 55 64, 66 38 L 79 10 L 97 2 L 86 18 L 76 42 C 65 66, 54 83, 42 86 C 30 89, 17 68, 9 57 Z"/>
           </svg>
         </div>
         <h1 className="text-2xl font-bold text-foreground">Bienvenido de vuelta</h1>

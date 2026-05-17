@@ -109,7 +109,7 @@ export default function PWAManager() {
           animation: pwa-slide-up 0.35s cubic-bezier(0.32, 0.72, 0, 1) both;
         }
         .pwa-install-btn {
-          background: linear-gradient(135deg, #10B981, #059669);
+          background: linear-gradient(135deg, #3A9E6A, #2D7A52);
           transition: filter 0.15s, transform 0.15s;
         }
         .pwa-install-btn:hover  { filter: brightness(1.1); transform: scale(1.02); }
@@ -148,7 +148,7 @@ export default function PWAManager() {
               {/* Icon */}
               <div style={{
                 width: 52, height: 52, borderRadius: 14, flexShrink: 0,
-                background: 'linear-gradient(135deg, #4F46E5, #7C3AED)',
+                background: 'linear-gradient(135deg, #4C7A58, #3B6145)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: 26, boxShadow: '0 4px 16px rgba(79,70,229,0.4)',
               }}>
@@ -229,7 +229,7 @@ export default function PWAManager() {
                 }}>
                   <div style={{
                     width: 34, height: 34, flexShrink: 0,
-                    background: 'linear-gradient(135deg, #4F46E5, #7C3AED)',
+                    background: 'linear-gradient(135deg, #4C7A58, #3B6145)',
                     borderRadius: 10, display: 'flex', alignItems: 'center',
                     justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 15,
                   }}>

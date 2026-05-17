@@ -110,7 +110,7 @@ export function BtcLiveChart({ targetPrice, closeTime, marketStatus }: Props) {
   }, [isOpen, fetchPrice]);
 
   const aboveTarget = current !== null && targetPrice > 0 && current >= targetPrice;
-  const resultColor = aboveTarget ? "#10B981" : "#EF4444";
+  const resultColor = aboveTarget ? "#3A9E6A" : "#EF4444";
 
   // Stable Y domain — only depends on the actual price range, not interpolated jitter
   const domainRef = useRef<[number, number]>([0, 0]);

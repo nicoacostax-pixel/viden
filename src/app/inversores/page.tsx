@@ -161,10 +161,10 @@ function ContactForm() {
 
 export default function InvestorsPage() {
   return (
-    <div className="min-h-screen bg-[#0A0A15] text-foreground">
+    <div className="min-h-screen bg-[#0D1F10] text-foreground">
 
       {/* ── NAV ── */}
-      <nav className="fixed top-0 inset-x-0 z-50 bg-[#0A0A15]/80 backdrop-blur border-b border-white/5">
+      <nav className="fixed top-0 inset-x-0 z-50 bg-[#0D1F10]/80 backdrop-blur border-b border-white/5">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
             <span className="text-lg font-extrabold tracking-tight text-white">Viden<span className="text-accent-light">Play</span></span>
@@ -200,7 +200,7 @@ export default function InvestorsPage() {
               </span>
             </h1>
 
-            <p className="text-lg sm:text-xl text-[#8B8BA0] max-w-2xl mx-auto leading-relaxed mb-10">
+            <p className="text-lg sm:text-xl text-[#8A9E8D] max-w-2xl mx-auto leading-relaxed mb-10">
               Viden es la primera plataforma de mercados de predicción en español — sin wallet, sin fricción, con resolución automática por IA y datos en tiempo real.
             </p>
 
@@ -227,7 +227,7 @@ export default function InvestorsPage() {
             {MARKET_STATS.map(s => (
               <div key={s.label} className="text-center">
                 <div className="text-3xl sm:text-4xl font-black text-white mb-1">{s.value}</div>
-                <div className="text-xs text-[#8B8BA0] leading-snug">{s.label}</div>
+                <div className="text-xs text-[#8A9E8D] leading-snug">{s.label}</div>
               </div>
             ))}
           </div>
@@ -238,7 +238,7 @@ export default function InvestorsPage() {
           <div className="text-center mb-12">
             <SectionLabel>El problema</SectionLabel>
             <SectionTitle>Un mercado de $200B sin<br />solución para LATAM</SectionTitle>
-            <p className="text-[#8B8BA0] max-w-xl mx-auto text-base">
+            <p className="text-[#8A9E8D] max-w-xl mx-auto text-base">
               Las plataformas de predicción globales ignoran a los 650 millones de hispanohablantes. La barrera de entrada es enorme y la confianza, mínima.
             </p>
           </div>
@@ -247,7 +247,7 @@ export default function InvestorsPage() {
               <div key={p.title} className="rounded-2xl bg-surface border border-border p-6">
                 <div className="text-3xl mb-4">{p.icon}</div>
                 <h3 className="text-base font-bold text-white mb-2">{p.title}</h3>
-                <p className="text-sm text-[#8B8BA0] leading-relaxed">{p.desc}</p>
+                <p className="text-sm text-[#8A9E8D] leading-relaxed">{p.desc}</p>
               </div>
             ))}
           </div>
@@ -259,26 +259,26 @@ export default function InvestorsPage() {
             <div>
               <SectionLabel>La solución</SectionLabel>
               <SectionTitle>Predicciones para todos,<br />no solo para expertos</SectionTitle>
-              <p className="text-[#8B8BA0] text-base leading-relaxed mb-8">
+              <p className="text-[#8A9E8D] text-base leading-relaxed mb-8">
                 Viden elimina cada barrera de entrada: no se necesita wallet, no se necesita criptomoneda, no se necesita conocimiento técnico. Solo tu intuición y una cuenta.
               </p>
               <div className="flex flex-col gap-4">
                 {SOLUTION_POINTS.map(s => (
                   <div key={s.text} className="flex items-start gap-3">
                     <span className="text-xl shrink-0 mt-0.5">{s.icon}</span>
-                    <span className="text-sm text-[#CBD5E1] leading-relaxed">{s.text}</span>
+                    <span className="text-sm text-[#D4E8D8] leading-relaxed">{s.text}</span>
                   </div>
                 ))}
               </div>
             </div>
             <div className="rounded-2xl bg-surface border border-border overflow-hidden">
               {/* Mock product screenshot */}
-              <div className="bg-[#13131F] px-5 py-4 border-b border-border">
+              <div className="bg-[#152018] px-5 py-4 border-b border-border">
                 <div className="flex items-center gap-2">
                   <div className="w-2.5 h-2.5 rounded-full bg-danger/60" />
                   <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/60" />
                   <div className="w-2.5 h-2.5 rounded-full bg-success/60" />
-                  <span className="ml-2 text-xs text-[#6B7280]">videnplay.com/market/42</span>
+                  <span className="ml-2 text-xs text-[#6B7D6E]">videnplay.com/market/42</span>
                 </div>
               </div>
               <div className="p-5 space-y-4">
@@ -287,21 +287,21 @@ export default function InvestorsPage() {
                   <span className="text-xs font-bold text-accent-light bg-accent/10 border border-accent/20 px-2 py-0.5 rounded-full uppercase tracking-wide">Deportes</span>
                 </div>
                 <p className="text-base font-bold text-white">¿Ganará el Real Madrid la Champions 2025?</p>
-                <div className="h-24 bg-[#1C1C35] rounded-xl flex items-end px-3 pb-2 gap-1 overflow-hidden">
+                <div className="h-24 bg-[#1B2A1E] rounded-xl flex items-end px-3 pb-2 gap-1 overflow-hidden">
                   {[45,48,52,50,55,60,58,63,61,67,65,70,68,72].map((v, i) => (
                     <div key={i} className="flex-1 rounded-sm" style={{ height: `${v}%`, background: `rgba(16,185,129,${0.3 + i*0.05})` }} />
                   ))}
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="rounded-xl bg-success/10 border border-success/20 p-3 text-center">
-                    <div className="text-xs text-[#8B8BA0] mb-1">Paga SÍ</div>
+                    <div className="text-xs text-[#8A9E8D] mb-1">Paga SÍ</div>
                     <div className="text-xl font-extrabold text-success">1.45x</div>
-                    <div className="text-[10px] text-[#8B8BA0] mt-0.5">69% prob.</div>
+                    <div className="text-[10px] text-[#8A9E8D] mt-0.5">69% prob.</div>
                   </div>
                   <div className="rounded-xl bg-danger/10 border border-danger/20 p-3 text-center">
-                    <div className="text-xs text-[#8B8BA0] mb-1">Paga NO</div>
+                    <div className="text-xs text-[#8A9E8D] mb-1">Paga NO</div>
                     <div className="text-xl font-extrabold text-danger">3.22x</div>
-                    <div className="text-[10px] text-[#8B8BA0] mt-0.5">31% prob.</div>
+                    <div className="text-[10px] text-[#8A9E8D] mt-0.5">31% prob.</div>
                   </div>
                 </div>
                 <div className="flex gap-2">
@@ -327,7 +327,7 @@ export default function InvestorsPage() {
             {REVENUE_STREAMS.map(r => (
               <div key={r.label} className="rounded-2xl bg-surface border border-border p-6 flex flex-col gap-3">
                 <div className="text-3xl font-black text-accent-light">{r.pct}</div>
-                <p className="text-sm text-[#8B8BA0] leading-snug">{r.label}</p>
+                <p className="text-sm text-[#8A9E8D] leading-snug">{r.label}</p>
               </div>
             ))}
           </div>
@@ -338,23 +338,23 @@ export default function InvestorsPage() {
           <div className="text-center mb-12">
             <SectionLabel>Proyecciones</SectionLabel>
             <SectionTitle>Camino hacia<br />la rentabilidad</SectionTitle>
-            <p className="text-[#8B8BA0] max-w-lg mx-auto text-sm">Proyecciones conservadoras basadas en tasas de crecimiento comparables de Polymarket y Augur en sus primeros 3 años.</p>
+            <p className="text-[#8A9E8D] max-w-lg mx-auto text-sm">Proyecciones conservadoras basadas en tasas de crecimiento comparables de Polymarket y Augur en sus primeros 3 años.</p>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-white/10">
-                  <th className="text-left py-3 px-4 text-xs font-bold text-[#6B7280] uppercase tracking-wide">Período</th>
-                  <th className="text-right py-3 px-4 text-xs font-bold text-[#6B7280] uppercase tracking-wide">Usuarios</th>
-                  <th className="text-right py-3 px-4 text-xs font-bold text-[#6B7280] uppercase tracking-wide">Volumen</th>
-                  <th className="text-right py-3 px-4 text-xs font-bold text-[#6B7280] uppercase tracking-wide">Ingresos</th>
+                  <th className="text-left py-3 px-4 text-xs font-bold text-[#6B7D6E] uppercase tracking-wide">Período</th>
+                  <th className="text-right py-3 px-4 text-xs font-bold text-[#6B7D6E] uppercase tracking-wide">Usuarios</th>
+                  <th className="text-right py-3 px-4 text-xs font-bold text-[#6B7D6E] uppercase tracking-wide">Volumen</th>
+                  <th className="text-right py-3 px-4 text-xs font-bold text-[#6B7D6E] uppercase tracking-wide">Ingresos</th>
                 </tr>
               </thead>
               <tbody>
                 {PROJECTIONS.map((p, i) => (
                   <tr key={p.year} className={`border-b border-white/5 ${i === PROJECTIONS.length - 1 ? "bg-accent/5" : ""}`}>
                     <td className="py-4 px-4 font-bold text-white text-sm">{p.year}</td>
-                    <td className="py-4 px-4 text-right text-sm text-[#CBD5E1]">{p.users}</td>
+                    <td className="py-4 px-4 text-right text-sm text-[#D4E8D8]">{p.users}</td>
                     <td className="py-4 px-4 text-right text-sm text-success font-semibold">{p.vol}</td>
                     <td className="py-4 px-4 text-right text-sm text-accent-light font-semibold">{p.rev}</td>
                   </tr>
@@ -386,10 +386,10 @@ export default function InvestorsPage() {
                   }
                 </div>
                 <div className="pt-1.5">
-                  <span className={`text-xs font-bold uppercase tracking-widest ${item.done ? "text-success" : "text-[#6B7280]"}`}>
+                  <span className={`text-xs font-bold uppercase tracking-widest ${item.done ? "text-success" : "text-[#6B7D6E]"}`}>
                     {item.q}
                   </span>
-                  <p className="text-sm text-[#CBD5E1] mt-0.5 leading-relaxed">{item.text}</p>
+                  <p className="text-sm text-[#D4E8D8] mt-0.5 leading-relaxed">{item.text}</p>
                 </div>
               </div>
             ))}
@@ -405,17 +405,17 @@ export default function InvestorsPage() {
               <div className="space-y-2">
                 <div className="text-2xl">📊</div>
                 <h4 className="font-bold text-white text-sm">Categoría validada</h4>
-                <p className="text-xs text-[#8B8BA0] leading-relaxed">Polymarket procesó más de $2B en Q1 2025. El mercado existe y crece. Solo falta la versión para LATAM.</p>
+                <p className="text-xs text-[#8A9E8D] leading-relaxed">Polymarket procesó más de $2B en Q1 2025. El mercado existe y crece. Solo falta la versión para LATAM.</p>
               </div>
               <div className="space-y-2">
                 <div className="text-2xl">🏆</div>
                 <h4 className="font-bold text-white text-sm">Ventana de oportunidad</h4>
-                <p className="text-xs text-[#8B8BA0] leading-relaxed">Ningún competidor directo en español con UX mobile-first, sin cripto requerida y enfocado en deportes locales.</p>
+                <p className="text-xs text-[#8A9E8D] leading-relaxed">Ningún competidor directo en español con UX mobile-first, sin cripto requerida y enfocado en deportes locales.</p>
               </div>
               <div className="space-y-2">
                 <div className="text-2xl">🚀</div>
                 <h4 className="font-bold text-white text-sm">Producto funcional hoy</h4>
-                <p className="text-xs text-[#8B8BA0] leading-relaxed">No es una idea. El producto está en producción con mercados activos, torneos y resolución automática.</p>
+                <p className="text-xs text-[#8A9E8D] leading-relaxed">No es una idea. El producto está en producción con mercados activos, torneos y resolución automática.</p>
               </div>
             </div>
           </div>
@@ -426,7 +426,7 @@ export default function InvestorsPage() {
           <div className="max-w-2xl mx-auto text-center mb-10">
             <SectionLabel>Contacto</SectionLabel>
             <SectionTitle>¿Te interesa<br />invertir en Viden?</SectionTitle>
-            <p className="text-[#8B8BA0] text-base">
+            <p className="text-[#8A9E8D] text-base">
               Estamos buscando inversores seed que compartan la visión de democratizar las predicciones para el mundo hispanohablante. Escríbenos y te enviamos el deck completo.
             </p>
           </div>
@@ -436,7 +436,7 @@ export default function InvestorsPage() {
         </section>
 
         {/* ── FOOTER ── */}
-        <footer className="py-10 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[#6B7280]">
+        <footer className="py-10 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[#6B7D6E]">
           <span className="font-bold text-white/40">VidenPlay © 2025</span>
           <div className="flex items-center gap-4">
             <Link href="/" className="hover:text-white transition-colors">Ir a la plataforma →</Link>

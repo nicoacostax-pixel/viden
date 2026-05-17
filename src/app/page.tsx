@@ -194,7 +194,7 @@ function CarouselCard({ market, fading }: { market: ApiMarket; fading: boolean }
               <Line
                 type="monotone"
                 dataKey="v"
-                stroke="#10B981"
+                stroke="#3A9E6A"
                 strokeWidth={2}
                 dot={false}
                 isAnimationActive={false}
@@ -204,8 +204,8 @@ function CarouselCard({ market, fading }: { market: ApiMarket; fading: boolean }
                 x={lastPt.ts}
                 y={lastPt.v}
                 r={4}
-                fill="#10B981"
-                stroke="#10B981"
+                fill="#3A9E6A"
+                stroke="#3A9E6A"
                 strokeWidth={0}
               />
             </LineChart>

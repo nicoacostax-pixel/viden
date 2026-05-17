@@ -74,7 +74,7 @@ function SnakeCanvas({ onGameOver }: SnakeCanvasProps) {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
     const { snake, food, score } = stateRef.current;
-    ctx.fillStyle = "#0D0D1A";
+    ctx.fillStyle = "#0F1A12";
     ctx.fillRect(0, 0, SIZE, SIZE);
     ctx.fillStyle = "rgba(255,255,255,0.04)";
     for (let x = 0; x < GRID; x++) for (let y = 0; y < GRID; y++) ctx.fillRect(x * CELL + CELL / 2 - 1, y * CELL + CELL / 2 - 1, 2, 2);
@@ -82,7 +82,7 @@ function SnakeCanvas({ onGameOver }: SnakeCanvasProps) {
     ctx.beginPath(); ctx.arc(fx, fy, CELL / 2 - 2, 0, Math.PI * 2); ctx.fillStyle = "#F59E0B"; ctx.fill();
     ctx.fillStyle = "#7C2D12"; ctx.font = `bold ${CELL - 6}px monospace`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("V", fx, fy + 1);
     snake.forEach((seg, i) => {
-      ctx.fillStyle = i === 0 ? "#818CF8" : "#4F46E5";
+      ctx.fillStyle = i === 0 ? "#7DAF8D" : "#4C7A58";
       ctx.beginPath(); ctx.roundRect(seg.x * CELL + 1, seg.y * CELL + 1, CELL - 2, CELL - 2, i === 0 ? 6 : 3); ctx.fill();
     });
     ctx.fillStyle = "rgba(255,255,255,0.7)"; ctx.font = "bold 13px monospace"; ctx.textAlign = "left"; ctx.textBaseline = "top"; ctx.fillText(`${score} VDN`, 6, 6);

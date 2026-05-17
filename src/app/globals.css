@@ -4,22 +4,22 @@
 
 /* ── Light mode (default) ─────────────────────────────────────────────────── */
 :root {
-  --background:  #F8FAFC;
-  --surface:     #FFFFFF;
-  --surface-alt: #F1F5F9;
-  --border:      #E2E8F0;
-  --foreground:  #0F172A;
-  --muted:       #6B7280;
+  --background:  #F5EFE0;
+  --surface:     #FAF7EE;
+  --surface-alt: #EDE8D8;
+  --border:      #D8D2C0;
+  --foreground:  #1A2E1F;
+  --muted:       #6B7D6E;
 }
 
 /* ── Dark mode ────────────────────────────────────────────────────────────── */
 .dark {
-  --background:  #0D0D1A;
-  --surface:     #13131F;
-  --surface-alt: #1C1C35;
-  --border:      #1E1E35;
-  --foreground:  #FFFFFF;
-  --muted:       #8B8BA0;
+  --background:  #0F1A12;
+  --surface:     #152018;
+  --surface-alt: #1B2A1E;
+  --border:      #243328;
+  --foreground:  #F5EFE0;
+  --muted:       #8A9E8D;
 }
 
 body {
@@ -38,7 +38,7 @@ body, header, main, aside, nav,
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: #2A2A4A transparent;
+  scrollbar-color: #3B6145 transparent;
 }
 
 /* ── Mobile: prevent iOS auto-zoom on inputs (font ≥ 16px) ───────────────── */
@@ -98,8 +98,8 @@ body, header, main, aside, nav,
   transition: border-color 200ms, box-shadow 200ms;
 }
 .market-card-inner:hover {
-  border-color: rgba(99, 102, 241, 0.6);
-  box-shadow: 0 0 0 1px rgba(79, 70, 229, 0.25);
+  border-color: rgba(76, 122, 88, 0.6);
+  box-shadow: 0 0 0 1px rgba(76, 122, 88, 0.25);
 }
 
 /* ── Tap-to-earn game animations ──────────────────────────────────────────── */

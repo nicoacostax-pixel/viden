@@ -12,12 +12,12 @@ module.exports = {
         border:        "var(--border)",
         foreground:    "var(--foreground)",
         // Fixed — same in both modes (opacity modifiers like /10 need hex)
-        accent:        "#4F46E5",
-        "accent-hover":"#4338CA",
-        "accent-light":"#818CF8",
-        success:       "#10B981",
+        accent:        "#4C7A58",
+        "accent-hover":"#3B6145",
+        "accent-light":"#7DAF8D",
+        success:       "#3A9E6A",
         danger:        "#EF4444",
-        warning:       "#F59E0B",
+        warning:       "#D97706",
         muted:         "var(--muted)",
       },
       fontFamily: {
