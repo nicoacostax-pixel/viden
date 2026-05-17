@@ -1,4 +1,4 @@
-const CACHE_NAME = 'viden-offline-v6';
+const CACHE_NAME = 'viden-offline-v7';
 const OFFLINE_URL = '/offline.html';
 
 self.addEventListener('install', (event) => {
