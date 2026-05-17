@@ -559,30 +559,34 @@ export default function Home() {
       .catch(() => {});
   }, [search, router]);
 
-  const stats = useMemo(() => {
-    const active   = rawMarkets.filter(m => m.status === "OPEN").length;
-    const totalVdn = rawMarkets.reduce(
-      (acc, m) => acc + (m.custodialPoolYes ?? 0) + (m.custodialPoolNo ?? 0),
-      0
-    );
-    return { active, vol: totalVdn.toLocaleString("es") };
-  }, [rawMarkets]);
+  // Strip all BTC auto-markets from every list — shown only in the dedicated banner
+  const nonBtcMarkets = useMemo(
+    () => rawMarkets.filter(m => !m.isBtcAuto),
+    [rawMarkets]
+  );
 
-  const filteredByCategory = useMemo(() => {
-    if (activeCategory === "all") return rawMarkets;
-    if (activeCategory === "favoritos") return rawMarkets.filter(m => watchlistIds.includes(m.marketId));
-    return rawMarkets.filter(m => matchCategory(m) === activeCategory);
-  }, [rawMarkets, activeCategory, watchlistIds]);
-
-  // Separate BTC live market from the regular grid
   const openBtcMarket = useMemo(
     () => rawMarkets.find(m => m.isBtcAuto && m.status === "OPEN") ?? null,
     [rawMarkets]
   );
 
+  const stats = useMemo(() => {
+    const active   = nonBtcMarkets.filter(m => m.status === "OPEN").length;
+    const totalVdn = nonBtcMarkets.reduce(
+      (acc, m) => acc + (m.custodialPoolYes ?? 0) + (m.custodialPoolNo ?? 0),
+      0
+    );
+    return { active, vol: totalVdn.toLocaleString("es") };
+  }, [nonBtcMarkets]);
+
+  const filteredByCategory = useMemo(() => {
+    if (activeCategory === "all") return nonBtcMarkets;
+    if (activeCategory === "favoritos") return nonBtcMarkets.filter(m => watchlistIds.includes(m.marketId));
+    return nonBtcMarkets.filter(m => matchCategory(m) === activeCategory);
+  }, [nonBtcMarkets, activeCategory, watchlistIds]);
+
   const displayedMarkets = useMemo(() => {
-    // Never show BTC auto-markets in the regular grid (open or resolved)
-    let list = filteredByCategory.filter(m => !m.isBtcAuto);
+    let list = filteredByCategory;
     if (search.trim()) {
       const q = search.toLowerCase();
       list = list.filter(m => m.question.toLowerCase().includes(q));
@@ -725,7 +729,7 @@ export default function Home() {
             )}
           </div>
           <div className="hidden lg:block w-72 shrink-0">
-            <Sidebar markets={rawMarkets} />
+            <Sidebar markets={nonBtcMarkets} />
           </div>
         </div>
       )}
