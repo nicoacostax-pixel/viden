@@ -565,7 +565,7 @@ export default function Home() {
 
   // Strip all BTC auto-markets from every list — shown only in the dedicated banner
   const nonBtcMarkets = useMemo(
-    () => rawMarkets.filter(m => !m.isBtcAuto),
+    () => rawMarkets.filter(m => !m.isBtcAuto && m.status === "OPEN"),
     [rawMarkets]
   );
 
