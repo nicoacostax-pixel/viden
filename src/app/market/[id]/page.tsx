@@ -877,11 +877,11 @@ export default function MarketDetail() {
             router.push(`/market/${next.market_id}`);
           }
         } catch { /* ignore */ }
-      }, 3_000);
+      }, 2_000);
     };
 
-    // Wait until the market closes + 8s grace for backend to create next market
-    const delay = Math.max(msUntilClose, 0) + 8_000;
+    // Wait until the market closes + 35s grace (30s resolution check interval + buffer)
+    const delay = Math.max(msUntilClose, 0) + 35_000;
     const timeoutId = setTimeout(startPolling, delay);
     return () => { clearTimeout(timeoutId); clearInterval(pollId); };
   }, [custodialMkt?.isBtcAuto, custodialMkt?.closeTime, numId, router]);
