@@ -171,7 +171,7 @@ export function BtcLiveChart({ targetPrice, closeTime, marketStatus }: Props) {
             <div className="text-lg font-bold text-warning tabular-nums">
               ${targetPrice.toLocaleString("en")}
             </div>
-            <div className="text-xs text-muted">Meta (SÍ)</div>
+            <div className="text-xs text-muted">Precio apertura</div>
           </div>
         )}
       </div>
@@ -232,7 +232,7 @@ export function BtcLiveChart({ targetPrice, closeTime, marketStatus }: Props) {
                   strokeDasharray="5 3"
                   strokeWidth={2}
                   label={{
-                    value: `Meta`,
+                    value: `Apertura`,
                     position: "insideTopLeft",
                     fontSize: 9,
                     fill: "#F59E0B",
@@ -267,8 +267,8 @@ export function BtcLiveChart({ targetPrice, closeTime, marketStatus }: Props) {
       </div>
 
       <div className="flex items-center justify-between text-xs text-muted border-t border-border pt-2">
-        <span>SÍ: BTC supera la meta</span>
-        <span>NO: BTC se queda debajo</span>
+        <span>SÍ: cierra por encima de apertura</span>
+        <span>NO: cierra por debajo</span>
       </div>
     </div>
   );
