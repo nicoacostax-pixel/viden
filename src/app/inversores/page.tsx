@@ -25,7 +25,7 @@ const SOLUTION_POINTS = [
 
 const REVENUE_STREAMS = [
   { pct: "2–5%", label: "Comisión del creador por mercado resuelto" },
-  { pct: "15%",  label: "Comisión de plataforma sobre cada apuesta custodial" },
+  { pct: "4%",   label: "Comisión de plataforma sobre cada apuesta custodial" },
   { pct: "∞",    label: "Token VDN: compras, bonos de bienvenida y torneos" },
   { pct: "B2B",  label: "Licencia white-label para operadores y medios deportivos" },
 ];
