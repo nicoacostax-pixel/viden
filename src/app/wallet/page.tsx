@@ -488,15 +488,158 @@ function TxHistory({ transactions }: { transactions: Transaction[] }) {
   );
 }
 
+// ── OXXO Form ─────────────────────────────────────────────────────────────────
+
+const VDN_PER_MXN = 1 / 0.20; // 1 MXN = 5 VDN
+
+function OxxoForm({ onBack }: { onBack: () => void }) {
+  const { token } = useAuth();
+  const [amount,    setAmount]    = useState("");
+  const [loading,   setLoading]   = useState(false);
+  const [error,     setError]     = useState<string | null>(null);
+  const [order,     setOrder]     = useState<{ reference: string; amount_mxn: number; vdn_amount: number; expires_at: number } | null>(null);
+  const [copied,    setCopied]    = useState(false);
+
+  const mxnNum     = parseFloat(amount) || 0;
+  const vdnPreview = mxnNum * VDN_PER_MXN;
+
+  async function handleCreate() {
+    if (!token || mxnNum < 20) { setError("Monto mínimo: $20 MXN"); return; }
+    setLoading(true); setError(null);
+    try {
+      const res  = await fetch(`${API_URL}/api/wallet/oxxo/create`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ amount_mxn: mxnNum }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Error al generar referencia");
+      setOrder(data);
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function copyRef() {
+    if (!order) return;
+    navigator.clipboard.writeText(order.reference);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  if (order) {
+    const expiresDate = new Date(order.expires_at * 1000).toLocaleDateString("es-MX", { day: "numeric", month: "long" });
+    return (
+      <div className="flex flex-col gap-4">
+        {/* Reference */}
+        <div className="rounded-2xl bg-surface border border-border p-5 text-center">
+          <p className="text-xs text-muted mb-2 uppercase tracking-wide font-semibold">Referencia OXXO</p>
+          <div className="text-2xl font-black text-foreground tracking-widest mb-3 font-mono">{order.reference}</div>
+          <button
+            onClick={copyRef}
+            className="inline-flex items-center gap-2 text-xs font-bold px-4 py-2 rounded-full bg-accent/10 text-accent border border-accent/20 transition-colors hover:bg-accent/20"
+          >
+            {copied ? "✓ Copiado" : "Copiar referencia"}
+          </button>
+        </div>
+
+        {/* Summary */}
+        <div className="flex items-center justify-between px-1">
+          <span className="text-sm text-muted">Monto a pagar</span>
+          <span className="font-bold text-foreground">${order.amount_mxn.toLocaleString("es-MX")} MXN</span>
+        </div>
+        <div className="flex items-center justify-between px-1">
+          <span className="text-sm text-muted">Recibirás</span>
+          <span className="font-bold text-success">{order.vdn_amount.toLocaleString("es-MX")} VDN</span>
+        </div>
+        <div className="flex items-center justify-between px-1">
+          <span className="text-sm text-muted">Vence el</span>
+          <span className="text-sm font-semibold text-foreground">{expiresDate}</span>
+        </div>
+
+        {/* Steps */}
+        <div className="rounded-xl bg-surface-alt border border-border p-4 space-y-2.5">
+          <p className="text-xs font-bold text-muted uppercase tracking-wide mb-1">Cómo pagar</p>
+          {[
+            "Ve a cualquier tienda OXXO",
+            'Di al cajero: "Pago de servicio Conekta"',
+            "Da la referencia y paga en efectivo",
+            "Los VDN se acreditan en ~1 hora",
+          ].map((step, i) => (
+            <div key={i} className="flex items-start gap-2.5 text-sm text-foreground">
+              <span className="w-5 h-5 rounded-full bg-accent text-white text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">{i + 1}</span>
+              {step}
+            </div>
+          ))}
+        </div>
+
+        <p className="text-xs text-muted text-center">
+          El saldo se acredita automáticamente tras confirmar el pago en OXXO
+        </p>
+        <button onClick={onBack} className="text-xs text-muted underline text-center">← Volver</button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      {error && <div className="p-3 rounded-lg bg-danger/10 border border-danger/20 text-sm text-danger">{error}</div>}
+      <div>
+        <label className="block text-xs text-muted mb-1.5">¿Cuánto quieres depositar? (MXN)</label>
+        <div className="relative">
+          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted font-medium">$</span>
+          <input
+            type="number" min="20" step="10" value={amount}
+            onChange={e => setAmount(e.target.value)}
+            onFocus={e => e.target.select()}
+            placeholder="100"
+            className="w-full pl-8 pr-4 py-3 rounded-lg bg-background border border-border text-foreground placeholder:text-muted focus:outline-none focus:border-accent transition-colors text-lg font-semibold"
+          />
+        </div>
+        <div className="grid grid-cols-4 gap-2 mt-2">
+          {[50, 100, 200, 500].map(v => (
+            <button key={v} onClick={() => setAmount(String(v))}
+              className={`py-2 rounded-lg text-xs font-semibold border transition-colors ${
+                amount === String(v) ? "border-accent text-accent bg-accent/5" : "border-border hover:border-accent text-muted hover:text-foreground"
+              }`}>
+              ${v}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {vdnPreview > 0 && (
+        <div className="p-4 rounded-xl bg-success/5 border border-success/20 flex items-center justify-between">
+          <span className="text-sm text-muted">Recibirás</span>
+          <span className="text-xl font-black text-success">{vdnPreview.toLocaleString("es-MX", { maximumFractionDigits: 0 })} VDN</span>
+        </div>
+      )}
+      <p className="text-xs text-muted text-center">1 VDN = $0.20 MXN · Mínimo $20 MXN · Pago en efectivo en OXXO</p>
+
+      <button
+        onClick={handleCreate}
+        disabled={loading || mxnNum < 20}
+        className="w-full py-3 rounded-xl bg-accent hover:bg-accent-hover text-white font-bold text-sm transition-colors disabled:opacity-50"
+      >
+        {loading ? "Generando referencia…" : `Generar ficha OXXO — $${mxnNum > 0 ? mxnNum.toLocaleString("es-MX") : "0"} MXN`}
+      </button>
+      <button onClick={onBack} className="text-xs text-muted underline text-center">← Volver</button>
+    </div>
+  );
+}
+
 // ── Deposit modal ─────────────────────────────────────────────────────────────
 
 function DepositModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: (r: DepositResult) => void }) {
   const { token } = useAuth();
   const [amount,  setAmount]  = useState("");
-  const [method,  setMethod]  = useState<"demo" | "stripe" | "spei">("stripe");
+  const [method,  setMethod]  = useState<"demo" | "stripe" | "spei" | "oxxo">("stripe");
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState<string | null>(null);
   const [showCard, setShowCard] = useState(false);
+  const [showOxxo, setShowOxxo] = useState(false);
 
   const usdNum     = parseFloat(amount) || 0;
   const vdnPreview = usdNum > 0 ? usdNum / VDN_PRICE : 0;
@@ -504,6 +647,7 @@ function DepositModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: 
   async function handleConfirm() {
     if (!token || usdNum < 5) { setError("Mínimo $5 USD"); return; }
     if (method === "stripe") { setShowCard(true); return; }
+    if (method === "oxxo")   { setShowOxxo(true); return; }
 
     setLoading(true); setError(null);
     try {
@@ -516,9 +660,10 @@ function DepositModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: 
   }
 
   const METHODS = [
-    { id: "stripe" as const, icon: "💳", label: "Tarjeta", desc: "Visa, Mastercard, débito — procesado por Stripe", active: true },
-    { id: "spei"   as const, icon: "🏦", label: "SPEI",    desc: "Transferencia bancaria MX — próximamente",       active: false },
-    { id: "demo"   as const, icon: "🧪", label: "Demo",    desc: "Acredita directamente — solo para pruebas",      active: true },
+    { id: "stripe" as const, icon: "💳", label: "Tarjeta",     desc: "Visa, Mastercard, débito — procesado por Stripe",  active: true },
+    { id: "oxxo"   as const, icon: "🏪", label: "OXXO",        desc: "Pago en efectivo en cualquier OXXO — pesos MXN",   active: true },
+    { id: "spei"   as const, icon: "🏦", label: "SPEI",        desc: "Transferencia bancaria MX — próximamente",         active: false },
+    { id: "demo"   as const, icon: "🧪", label: "Demo",        desc: "Acredita directamente — solo para pruebas",        active: true },
   ];
 
   if (showCard) {
@@ -530,6 +675,14 @@ function DepositModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: 
           onSuccess={onSuccess}
           onCancel={() => setShowCard(false)}
         />
+      </Modal>
+    );
+  }
+
+  if (showOxxo) {
+    return (
+      <Modal title="Pagar en OXXO" onClose={onClose}>
+        <OxxoForm onBack={() => setShowOxxo(false)} />
       </Modal>
     );
   }
