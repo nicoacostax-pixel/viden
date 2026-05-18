@@ -467,37 +467,65 @@ export default function InvestorsPage() {
         <Section bg={CREAM}>
           <div style={{ textAlign: "center", marginBottom: 48 }}>
             <Pill>Valuación</Pill>
-            <H2>Valuación pre-money<br /><span style={{ color: "#3D8A56" }}>$1.5M – $4M USD</span></H2>
+            <H2>Valuación pre-money seed<br /><span style={{ color: "#3D8A56" }}>$1.5M – $4M USD</span></H2>
             <Body center>
-              Rango seed justificado por tracción, mercado y modelo. Negociable según perfil del inversor.
+              El rango no es arbitrario — está anclado en comparables de mercado, dilución razonable para ambas partes y el estado real del producto hoy.
             </Body>
           </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 16, maxWidth: 720, margin: "0 auto" }}>
+
+          {/* Dilución visual */}
+          <div style={{
+            background: WHITE, border: "1.5px solid #D9CEB5", borderRadius: 20,
+            padding: "28px 32px", marginBottom: 32, maxWidth: 720, margin: "0 auto 32px",
+          }}>
+            <p style={{ fontSize: 13, fontWeight: 700, color: "#5A6B5C", textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 16 }}>
+              Ejemplo de estructura — ticket $500K a $3M pre-money
+            </p>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(140px,1fr))", gap: 20, textAlign: "center" }}>
+              {[
+                { label: "Valuación pre-money", val: "$3M USD" },
+                { label: "Ticket inversor", val: "$500K" },
+                { label: "Valuación post-money", val: "$3.5M" },
+                { label: "Dilución del inversor", val: "~14%" },
+              ].map(d => (
+                <div key={d.label}>
+                  <div style={{ fontSize: 22, fontWeight: 900, color: "#3D8A56" }}>{d.val}</div>
+                  <div style={{ fontSize: 12, color: "#5A6B5C", marginTop: 4, lineHeight: 1.4 }}>{d.label}</div>
+                </div>
+              ))}
+            </div>
+            <p style={{ fontSize: 12, color: "#8A9E8D", marginTop: 16, textAlign: "center" }}>
+              Dilución estándar seed: 15–25%. Estamos en la parte baja — favorable para el inversor.
+            </p>
+          </div>
+
+          {/* 5 puntos */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 14, maxWidth: 720, margin: "0 auto" }}>
             {[
               {
                 n: "1",
-                title: "Producto en producción, no una idea",
-                desc: "La plataforma está live con mercados activos, resolución automática, torneos y usuarios reales. El riesgo de ejecución ya está demostrado.",
+                title: "Benchmark de mercado: $1.5M es el piso para un MVP funcional",
+                desc: "Startups de fintech y gaming en LATAM con producto live (no solo deck) se valúan entre $1M y $5M pre-money en seed. Sin producto, el piso baja a $500K. Tener la plataforma en producción con mercados activos y resolución automática justifica estar en la mitad alta del rango.",
               },
               {
                 n: "2",
-                title: "Mercado de $200B+ sin líder en español",
-                desc: "650 millones de hispanohablantes no tienen una plataforma de predicciones dedicada. El TAM existe y está validado por el crecimiento global de la categoría.",
+                title: "Sin revenue real, no usamos múltiplo de ingresos — usamos múltiplo de mercado",
+                desc: "La categoría de predicciones está en el punto más alto de su historia. El volumen global creció 10x en 2024. Valuaciones basadas en TAM y momentum son estándar en esta etapa: el múltiplo no viene de los ingresos actuales sino del tamaño del mercado capturablecon la ronda.",
               },
               {
                 n: "3",
-                title: "Modelo de ingresos claro y probado",
-                desc: "4% de fee por apuesta + comisión al creador. Sin depender de publicidad ni de subsidios. Ingresos desde el primer mercado resuelto.",
+                title: "Modelo de ingresos claro desde el día uno",
+                desc: "4% de fee por apuesta. Sin depender de publicidad, NFTs ni tokenomics especulativa. Con 10,000 usuarios activos y $50 promedio apostado por mes, eso son $200K anuales — suficiente para justificar el rango y planear la siguiente ronda.",
               },
               {
                 n: "4",
-                title: "Tecnología diferenciada",
-                desc: "Precios algorítmicos LMSR, resolución automática por datos en tiempo real y cuenta custodial sin wallet. Barreras técnicas reales frente a copias.",
+                title: "Riesgos ya identificados y descontados",
+                desc: "Regulación custodial en México, ausencia de track record previo del equipo y revenue aún temprano ya están reflejados en el rango. Un producto equivalente con equipo con exits previos estaría a $6M–$10M. El descuento está aplicado.",
               },
               {
                 n: "5",
-                title: "Momento de mercado único",
-                desc: "El interés global en mercados de predicción está en su punto más alto. Entrar ahora es capturar LATAM antes de que llegue un jugador con capital masivo.",
+                title: "La siguiente ronda es el objetivo real",
+                desc: "Esta ronda seed financia 12–18 meses para llegar a 10K usuarios activos y $25K USD de ingresos mensuales. Con esas métricas, una Serie A en LATAM tech se cierra entre $8M y $15M pre-money — generando un retorno de 3x–5x para el inversor seed en 18–24 meses.",
               },
             ].map(item => (
               <div key={item.n} style={{
