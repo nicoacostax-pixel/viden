@@ -938,9 +938,12 @@ export default function MarketDetail() {
     return <div className="text-center text-muted py-20">Mercado no encontrado.</div>;
 
   const statusLabel =
-    custodialMkt.status === "YES"       ? "SÍ ganó" :
-    custodialMkt.status === "NO"        ? "NO ganó" :
-    custodialMkt.status === "CANCELLED" ? "Cancelado" :
+    custodialMkt.status === "YES"        ? "SÍ ganó" :
+    custodialMkt.status === "NO"         ? "NO ganó" :
+    custodialMkt.status === "CANCELLED"  ? "Cancelado" :
+    custodialMkt.status === "LOCAL"      ? `🏆 Local ganó — ${custodialMkt.homeTeam}` :
+    custodialMkt.status === "EMPATE"     ? "🤝 Empate" :
+    custodialMkt.status === "VISITANTE"  ? `🏆 Visitante ganó — ${custodialMkt.awayTeam}` :
     isClosed                            ? "Cerrado · pendiente de resolución" : "Abierto";
 
   return (

@@ -69,8 +69,11 @@ export function FootballScoreWidget({ market }: Props) {
       <div className="flex items-center justify-between gap-2">
         {/* Home */}
         <div className="flex-1 flex flex-col items-center gap-1.5">
-          <div className="w-12 h-12 rounded-full bg-accent/10 border border-border flex items-center justify-center text-sm font-bold text-foreground">
-            {teamInitials(market.homeTeam!)}
+          <div className="w-12 h-12 rounded-full bg-accent/10 border border-border flex items-center justify-center overflow-hidden">
+            {market.homeCrest
+              ? <img src={market.homeCrest} alt={market.homeTeam ?? ""} className="w-10 h-10 object-contain" />
+              : <span className="text-sm font-bold text-foreground">{teamInitials(market.homeTeam!)}</span>
+            }
           </div>
           <span className="text-sm font-semibold text-center leading-tight">{market.homeTeam}</span>
         </div>
@@ -101,8 +104,11 @@ export function FootballScoreWidget({ market }: Props) {
 
         {/* Away */}
         <div className="flex-1 flex flex-col items-center gap-1.5">
-          <div className="w-12 h-12 rounded-full bg-accent/10 border border-border flex items-center justify-center text-sm font-bold text-foreground">
-            {teamInitials(market.awayTeam!)}
+          <div className="w-12 h-12 rounded-full bg-accent/10 border border-border flex items-center justify-center overflow-hidden">
+            {market.awayCrest
+              ? <img src={market.awayCrest} alt={market.awayTeam ?? ""} className="w-10 h-10 object-contain" />
+              : <span className="text-sm font-bold text-foreground">{teamInitials(market.awayTeam!)}</span>
+            }
           </div>
           <span className="text-sm font-semibold text-center leading-tight">{market.awayTeam}</span>
         </div>
@@ -112,7 +118,7 @@ export function FootballScoreWidget({ market }: Props) {
       <div className="mt-3 pt-3 border-t border-border text-xs text-muted text-center">
         {isFinished
           ? `Partido finalizado · ${data.homeScore! > data.awayScore! ? market.homeTeam + " ganó" : data.homeScore === data.awayScore ? "Empate" : market.awayTeam + " ganó"}`
-          : "SÍ: gana el local · NO: empate o gana el visitante"}
+          : "Local · Empate · Visitante — elige el resultado"}
       </div>
     </div>
   );

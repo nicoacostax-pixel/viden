@@ -15,7 +15,7 @@ export type ApiMarket = {
   totalPoolYes: string;
   totalPoolNo: string;
   totalPool: string;
-  status: "OPEN" | "YES" | "NO" | "CANCELLED";
+  status: "OPEN" | "YES" | "NO" | "CANCELLED" | "LOCAL" | "EMPATE" | "VISITANTE";
   lastUpdated: number;
   category: string | null;
   emoji: string | null;
@@ -34,6 +34,8 @@ export type ApiMarket = {
   btcTargetPrice: number | null;
   homeTeam: string | null;
   awayTeam: string | null;
+  homeCrest: string | null;
+  awayCrest: string | null;
   kickoffTs: number | null;
   source: string | null;
   liveScoreHome: number | null;
@@ -46,7 +48,7 @@ export type ApiMarket = {
 export type ApiPosition = {
   marketId: number;
   question: string;
-  status: "OPEN" | "YES" | "NO" | "CANCELLED";
+  status: "OPEN" | "YES" | "NO" | "CANCELLED" | "LOCAL" | "EMPATE" | "VISITANTE";
   isYes: boolean;
   netAmount: string;
   closeTime: number;
@@ -76,6 +78,9 @@ const STATUS_TO_OUTCOME: Record<ApiMarket["status"], number> = {
   YES:       Outcome.YES,
   NO:        Outcome.NO,
   CANCELLED: Outcome.CANCELLED,
+  LOCAL:     Outcome.YES,
+  EMPATE:    Outcome.NO,
+  VISITANTE: Outcome.NO,
 };
 
 export function toMarketData(m: ApiMarket): MarketData {
