@@ -5,24 +5,15 @@ import Link from "next/link";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
 
-// ── Data ──────────────────────────────────────────────────────────────────────
+// Paleta
+const CREAM  = "#F5EFE0";
+const LGREEN = "#E8F4EC";
+const WHITE  = "#FFFFFF";
 
 const PROBLEMS = [
-  {
-    icon: "🏦",
-    title: "Mercados cerrados",
-    desc: "Las casas de apuestas tradicionales capturan toda la ganancia. El usuario siempre pierde contra la banca.",
-  },
-  {
-    icon: "🌎",
-    title: "LATAM desatendido",
-    desc: "Más de 650 millones de hispanohablantes sin acceso a plataformas de predicción en su idioma y moneda.",
-  },
-  {
-    icon: "🔒",
-    title: "Barrera cripto",
-    desc: "Los mercados de predicción web3 requieren wallet y conocimientos técnicos. El usuario promedio se pierde.",
-  },
+  { icon: "🏦", title: "Mercados cerrados", desc: "Las casas de apuestas tradicionales capturan toda la ganancia. El usuario siempre pierde contra la banca." },
+  { icon: "🌎", title: "LATAM desatendido", desc: "Más de 650 millones de hispanohablantes sin acceso a plataformas de predicción en su idioma y moneda." },
+  { icon: "🔒", title: "Barrera cripto", desc: "Los mercados de predicción web3 requieren wallet y conocimientos técnicos. El usuario promedio se pierde." },
 ];
 
 const SOLUTION_POINTS = [
@@ -34,14 +25,14 @@ const SOLUTION_POINTS = [
 
 const REVENUE_STREAMS = [
   { pct: "2–5%", label: "Comisión del creador por mercado resuelto" },
-  { pct: "15%", label: "Comisión de plataforma sobre cada apuesta custodial" },
-  { pct: "∞", label: "Token VDN: compras, bonos de bienvenida y torneos" },
-  { pct: "B2B", label: "Licencia white-label para operadores y medios deportivos" },
+  { pct: "15%",  label: "Comisión de plataforma sobre cada apuesta custodial" },
+  { pct: "∞",    label: "Token VDN: compras, bonos de bienvenida y torneos" },
+  { pct: "B2B",  label: "Licencia white-label para operadores y medios deportivos" },
 ];
 
 const PROJECTIONS = [
-  { year: "Año 1", users: "10,000", vol: "$500K", rev: "$25K" },
-  { year: "Año 2", users: "80,000", vol: "$6M",   rev: "$300K" },
+  { year: "Año 1", users: "10,000",  vol: "$500K", rev: "$25K" },
+  { year: "Año 2", users: "80,000",  vol: "$6M",   rev: "$300K" },
   { year: "Año 3", users: "400,000", vol: "$40M",  rev: "$2M" },
 ];
 
@@ -59,24 +50,6 @@ const MARKET_STATS = [
   { value: "3×",     label: "Crecimiento anual de Polymarket en 2024" },
   { value: "$2B+",   label: "Volumen Polymarket en solo el primer trimestre de 2025" },
 ];
-
-// ── Components ────────────────────────────────────────────────────────────────
-
-function SectionLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="inline-block text-xs font-bold tracking-[0.2em] uppercase text-accent-light bg-accent/10 border border-accent/20 px-3 py-1 rounded-full mb-4">
-      {children}
-    </span>
-  );
-}
-
-function SectionTitle({ children }: { children: React.ReactNode }) {
-  return (
-    <h2 className="text-3xl sm:text-4xl font-extrabold text-foreground leading-tight mb-4">
-      {children}
-    </h2>
-  );
-}
 
 // ── Contact Form ──────────────────────────────────────────────────────────────
 
@@ -105,55 +78,108 @@ function ContactForm() {
 
   if (status === "ok") {
     return (
-      <div className="rounded-2xl border border-success/30 bg-success/10 p-10 text-center">
-        <div className="text-4xl mb-4">✅</div>
-        <h3 className="text-xl font-bold text-foreground mb-2">Mensaje recibido</h3>
-        <p className="text-muted text-sm">Nos pondremos en contacto contigo en menos de 24 horas.</p>
+      <div style={{ background: WHITE, border: "1.5px solid #B8D9C2", borderRadius: 20, padding: "40px 32px", textAlign: "center" }}>
+        <div style={{ fontSize: 40, marginBottom: 12 }}>✅</div>
+        <h3 style={{ color: "#0F1E11", fontWeight: 700, fontSize: 18, marginBottom: 8 }}>Mensaje recibido</h3>
+        <p style={{ color: "#5A6B5C", fontSize: 14 }}>Nos pondremos en contacto contigo en menos de 24 horas.</p>
       </div>
     );
   }
 
-  const inputCls = "w-full bg-surface-alt border border-border rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted focus:outline-none focus:border-accent/60 transition-colors";
+  const inputStyle: React.CSSProperties = {
+    width: "100%", background: WHITE, border: "1.5px solid #C8D9CC",
+    borderRadius: 12, padding: "12px 16px", fontSize: 14, color: "#0F1E11",
+    outline: "none", boxSizing: "border-box",
+  };
+
+  const labelStyle: React.CSSProperties = {
+    display: "block", fontSize: 11, fontWeight: 700, color: "#5A6B5C",
+    marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.1em",
+  };
 
   return (
-    <form onSubmit={submit} className="rounded-2xl bg-surface border border-border p-6 sm:p-8 flex flex-col gap-4">
-      <div className="grid sm:grid-cols-2 gap-4">
+    <form onSubmit={submit} style={{ background: WHITE, border: "1.5px solid #C8D9CC", borderRadius: 20, padding: "32px 28px", display: "flex", flexDirection: "column", gap: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
         <div>
-          <label className="block text-xs font-semibold text-muted mb-1.5 uppercase tracking-wide">Nombre *</label>
-          <input required value={form.name} onChange={set("name")} placeholder="Tu nombre" className={inputCls} />
+          <label style={labelStyle}>Nombre *</label>
+          <input required value={form.name} onChange={set("name")} placeholder="Tu nombre" style={inputStyle} />
         </div>
         <div>
-          <label className="block text-xs font-semibold text-muted mb-1.5 uppercase tracking-wide">Email *</label>
-          <input required type="email" value={form.email} onChange={set("email")} placeholder="tu@email.com" className={inputCls} />
+          <label style={labelStyle}>Email *</label>
+          <input required type="email" value={form.email} onChange={set("email")} placeholder="tu@email.com" style={inputStyle} />
         </div>
       </div>
       <div>
-        <label className="block text-xs font-semibold text-muted mb-1.5 uppercase tracking-wide">Empresa / Fondo</label>
-        <input value={form.company} onChange={set("company")} placeholder="Nombre de tu empresa o fondo (opcional)" className={inputCls} />
+        <label style={labelStyle}>Empresa / Fondo</label>
+        <input value={form.company} onChange={set("company")} placeholder="Nombre de tu empresa o fondo (opcional)" style={inputStyle} />
       </div>
       <div>
-        <label className="block text-xs font-semibold text-muted mb-1.5 uppercase tracking-wide">Mensaje *</label>
+        <label style={labelStyle}>Mensaje *</label>
         <textarea
-          required
-          value={form.message}
-          onChange={set("message")}
-          placeholder="Cuéntanos sobre tu interés en Viden, ticket de inversión aproximado, o cualquier pregunta…"
-          rows={5}
-          className={`${inputCls} resize-none`}
+          required value={form.message} onChange={set("message")} rows={5}
+          placeholder="Cuéntanos sobre tu interés en Viden, ticket aproximado, o cualquier pregunta…"
+          style={{ ...inputStyle, resize: "none" }}
         />
       </div>
       {status === "err" && (
-        <p className="text-danger text-sm">Error al enviar. Escríbenos directamente a <span className="underline">taller.organico.casa@gmail.com</span></p>
+        <p style={{ color: "#DC2626", fontSize: 13 }}>
+          Error al enviar. Escríbenos a <strong>taller.organico.casa@gmail.com</strong>
+        </p>
       )}
       <button
-        type="submit"
-        disabled={status === "sending"}
-        className="w-full bg-accent hover:bg-accent-hover text-white font-bold py-3.5 rounded-xl transition-colors disabled:opacity-50 text-sm tracking-wide"
+        type="submit" disabled={status === "sending"}
+        style={{
+          background: "#3D8A56", color: "#fff", border: "none", borderRadius: 12,
+          padding: "14px 0", fontWeight: 700, fontSize: 15, cursor: "pointer",
+          opacity: status === "sending" ? 0.6 : 1,
+        }}
       >
         {status === "sending" ? "Enviando…" : "Enviar mensaje →"}
       </button>
-      <p className="text-center text-xs text-muted">Respondemos en menos de 24 horas.</p>
+      <p style={{ textAlign: "center", fontSize: 12, color: "#8A9E8D" }}>Respondemos en menos de 24 horas.</p>
     </form>
+  );
+}
+
+// ── Shared section wrapper ────────────────────────────────────────────────────
+
+function Section({ bg, children, id }: { bg: string; children: React.ReactNode; id?: string }) {
+  return (
+    <section id={id} style={{ background: bg, width: "100%" }}>
+      <div style={{ maxWidth: 1080, margin: "0 auto", padding: "80px 24px" }}>
+        {children}
+      </div>
+    </section>
+  );
+}
+
+function Pill({ children }: { children: React.ReactNode }) {
+  return (
+    <span style={{
+      display: "inline-block", fontSize: 11, fontWeight: 700,
+      letterSpacing: "0.18em", textTransform: "uppercase",
+      color: "#3D8A56", background: "rgba(61,138,86,0.10)",
+      border: "1px solid rgba(61,138,86,0.25)",
+      borderRadius: 99, padding: "4px 14px", marginBottom: 14,
+    }}>
+      {children}
+    </span>
+  );
+}
+
+function H2({ children }: { children: React.ReactNode }) {
+  return (
+    <h2 style={{ fontSize: "clamp(28px,5vw,42px)", fontWeight: 900, color: "#0F1E11", lineHeight: 1.15, marginBottom: 16 }}>
+      {children}
+    </h2>
+  );
+}
+
+function Body({ children, center }: { children: React.ReactNode; center?: boolean }) {
+  return (
+    <p style={{ fontSize: 15, color: "#4A5C4C", lineHeight: 1.65, textAlign: center ? "center" : "left", maxWidth: center ? 560 : undefined, margin: center ? "0 auto" : undefined }}>
+      {children}
+    </p>
   );
 }
 
@@ -161,285 +187,303 @@ function ContactForm() {
 
 export default function InvestorsPage() {
   return (
-    <div className="min-h-screen bg-[#0D1F10] text-foreground">
+    <div style={{ fontFamily: "inherit" }}>
 
       {/* ── NAV ── */}
-      <nav className="fixed top-0 inset-x-0 z-50 bg-[#0D1F10]/80 backdrop-blur border-b border-white/5">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <span className="text-lg font-extrabold tracking-tight text-white">Viden<span className="text-accent-light">Play</span></span>
+      <nav style={{
+        position: "fixed", top: 0, left: 0, right: 0, zIndex: 100,
+        background: "rgba(255,255,255,0.92)", backdropFilter: "blur(12px)",
+        borderBottom: "1px solid #D4DDD5",
+      }}>
+        <div style={{ maxWidth: 1080, margin: "0 auto", padding: "0 24px", height: 56, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <Link href="/" style={{ textDecoration: "none" }}>
+            <span style={{ fontSize: 17, fontWeight: 900, color: "#0F1E11" }}>
+              Viden<span style={{ color: "#3D8A56" }}>Play</span>
+            </span>
           </Link>
           <a
             href="#contacto"
-            className="text-xs font-bold bg-accent hover:bg-accent-hover text-white px-4 py-2 rounded-full transition-colors"
+            style={{
+              background: "#3D8A56", color: "#fff", textDecoration: "none",
+              fontSize: 12, fontWeight: 700, padding: "8px 18px",
+              borderRadius: 99, transition: "background 0.15s",
+            }}
           >
             Hablar con el equipo
           </a>
         </div>
       </nav>
 
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-14">
+      <div style={{ paddingTop: 56 }}>
 
-        {/* ── HERO ── */}
-        <section className="min-h-[90vh] flex flex-col items-center justify-center text-center py-24 relative">
-          {/* Background glow */}
-          <div className="absolute inset-0 overflow-hidden pointer-events-none">
-            <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-accent/10 blur-[120px]" />
-          </div>
-
-          <div className="relative">
-            <div className="inline-flex items-center gap-2 text-xs font-semibold border border-accent/30 bg-accent/10 text-accent-light px-4 py-2 rounded-full mb-8">
-              <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
+        {/* ── HERO — CREAM ── */}
+        <section style={{ background: CREAM, minHeight: "88vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div style={{ maxWidth: 800, margin: "0 auto", padding: "80px 24px", textAlign: "center" }}>
+            <div style={{
+              display: "inline-flex", alignItems: "center", gap: 8,
+              fontSize: 12, fontWeight: 700, color: "#3D8A56",
+              border: "1px solid rgba(61,138,86,0.3)", background: "rgba(61,138,86,0.08)",
+              padding: "6px 16px", borderRadius: 99, marginBottom: 32,
+            }}>
+              <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#2EA855", display: "inline-block", animation: "pulse 1.5s infinite" }} />
               Buscando inversión seed — Ronda abierta 2025
             </div>
 
-            <h1 className="text-5xl sm:text-7xl font-black tracking-tight text-white leading-none mb-6">
+            <h1 style={{ fontSize: "clamp(36px,8vw,72px)", fontWeight: 900, color: "#0F1E11", lineHeight: 1.08, marginBottom: 24 }}>
               El Polymarket<br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent-light to-success">
-                de Latinoamérica
-              </span>
+              <span style={{ color: "#3D8A56" }}>de Latinoamérica</span>
             </h1>
 
-            <p className="text-lg sm:text-xl text-[#8A9E8D] max-w-2xl mx-auto leading-relaxed mb-10">
-              Viden es la primera plataforma de mercados de predicción en español — sin wallet, sin fricción, con resolución automática por IA y datos en tiempo real.
+            <p style={{ fontSize: "clamp(15px,2.2vw,19px)", color: "#4A5C4C", lineHeight: 1.6, maxWidth: 600, margin: "0 auto 40px" }}>
+              Viden es la primera plataforma de mercados de predicción en español — sin wallet, sin fricción, con resolución automática en tiempo real.
             </p>
 
-            <div className="flex flex-wrap items-center justify-center gap-4">
-              <a
-                href="#contacto"
-                className="bg-accent hover:bg-accent-hover text-white font-bold px-8 py-3.5 rounded-full text-sm transition-colors"
-              >
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 12, justifyContent: "center" }}>
+              <a href="#contacto" style={{
+                background: "#3D8A56", color: "#fff", textDecoration: "none",
+                fontWeight: 700, fontSize: 14, padding: "14px 32px",
+                borderRadius: 99, display: "inline-block",
+              }}>
                 Solicitar deck →
               </a>
-              <a
-                href="#como-funciona"
-                className="border border-white/20 hover:border-white/40 text-white font-semibold px-8 py-3.5 rounded-full text-sm transition-colors"
-              >
-                Ver demo
+              <a href="#como-funciona" style={{
+                background: "transparent", color: "#0F1E11", textDecoration: "none",
+                fontWeight: 600, fontSize: 14, padding: "14px 32px",
+                borderRadius: 99, border: "1.5px solid #B8C8BA", display: "inline-block",
+              }}>
+                Ver cómo funciona
               </a>
             </div>
           </div>
         </section>
 
-        {/* ── MARKET STATS ── */}
-        <section className="py-16 border-t border-white/5">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
+        {/* ── STATS — WHITE ── */}
+        <Section bg={WHITE}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: 32, textAlign: "center" }}>
             {MARKET_STATS.map(s => (
-              <div key={s.label} className="text-center">
-                <div className="text-3xl sm:text-4xl font-black text-white mb-1">{s.value}</div>
-                <div className="text-xs text-[#8A9E8D] leading-snug">{s.label}</div>
+              <div key={s.label}>
+                <div style={{ fontSize: "clamp(28px,5vw,44px)", fontWeight: 900, color: "#3D8A56", lineHeight: 1 }}>{s.value}</div>
+                <div style={{ fontSize: 13, color: "#5A6B5C", marginTop: 8, lineHeight: 1.4 }}>{s.label}</div>
               </div>
             ))}
           </div>
-        </section>
+        </Section>
 
-        {/* ── PROBLEMA ── */}
-        <section className="py-20 border-t border-white/5">
-          <div className="text-center mb-12">
-            <SectionLabel>El problema</SectionLabel>
-            <SectionTitle>Un mercado de $200B sin<br />solución para LATAM</SectionTitle>
-            <p className="text-[#8A9E8D] max-w-xl mx-auto text-base">
+        {/* ── PROBLEMA — LIGHT GREEN ── */}
+        <Section bg={LGREEN}>
+          <div style={{ textAlign: "center", marginBottom: 48 }}>
+            <Pill>El problema</Pill>
+            <H2>Un mercado de $200B sin<br />solución para LATAM</H2>
+            <Body center>
               Las plataformas de predicción globales ignoran a los 650 millones de hispanohablantes. La barrera de entrada es enorme y la confianza, mínima.
-            </p>
+            </Body>
           </div>
-          <div className="grid sm:grid-cols-3 gap-6">
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(260px,1fr))", gap: 20 }}>
             {PROBLEMS.map(p => (
-              <div key={p.title} className="rounded-2xl bg-surface border border-border p-6">
-                <div className="text-3xl mb-4">{p.icon}</div>
-                <h3 className="text-base font-bold text-white mb-2">{p.title}</h3>
-                <p className="text-sm text-[#8A9E8D] leading-relaxed">{p.desc}</p>
+              <div key={p.title} style={{
+                background: WHITE, border: "1.5px solid #C8D9CC",
+                borderRadius: 20, padding: "28px 24px",
+              }}>
+                <div style={{ fontSize: 32, marginBottom: 14 }}>{p.icon}</div>
+                <h3 style={{ fontSize: 16, fontWeight: 700, color: "#0F1E11", marginBottom: 8 }}>{p.title}</h3>
+                <p style={{ fontSize: 14, color: "#4A5C4C", lineHeight: 1.6 }}>{p.desc}</p>
               </div>
             ))}
           </div>
-        </section>
+        </Section>
 
-        {/* ── SOLUCIÓN ── */}
-        <section id="como-funciona" className="py-20 border-t border-white/5">
-          <div className="grid sm:grid-cols-2 gap-12 items-center">
+        {/* ── SOLUCIÓN — CREAM ── */}
+        <Section bg={CREAM} id="como-funciona">
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 60, alignItems: "center" }}>
             <div>
-              <SectionLabel>La solución</SectionLabel>
-              <SectionTitle>Predicciones para todos,<br />no solo para expertos</SectionTitle>
-              <p className="text-[#8A9E8D] text-base leading-relaxed mb-8">
+              <Pill>La solución</Pill>
+              <H2>Predicciones para todos,<br />no solo para expertos</H2>
+              <Body>
                 Viden elimina cada barrera de entrada: no se necesita wallet, no se necesita criptomoneda, no se necesita conocimiento técnico. Solo tu intuición y una cuenta.
-              </p>
-              <div className="flex flex-col gap-4">
+              </Body>
+              <div style={{ marginTop: 28, display: "flex", flexDirection: "column", gap: 16 }}>
                 {SOLUTION_POINTS.map(s => (
-                  <div key={s.text} className="flex items-start gap-3">
-                    <span className="text-xl shrink-0 mt-0.5">{s.icon}</span>
-                    <span className="text-sm text-[#D4E8D8] leading-relaxed">{s.text}</span>
+                  <div key={s.text} style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+                    <span style={{ fontSize: 20, flexShrink: 0, marginTop: 2 }}>{s.icon}</span>
+                    <span style={{ fontSize: 14, color: "#0F1E11", lineHeight: 1.6 }}>{s.text}</span>
                   </div>
                 ))}
               </div>
             </div>
-            <div className="rounded-2xl bg-surface border border-border overflow-hidden">
-              {/* Mock product screenshot */}
-              <div className="bg-[#152018] px-5 py-4 border-b border-border">
-                <div className="flex items-center gap-2">
-                  <div className="w-2.5 h-2.5 rounded-full bg-danger/60" />
-                  <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/60" />
-                  <div className="w-2.5 h-2.5 rounded-full bg-success/60" />
-                  <span className="ml-2 text-xs text-[#6B7D6E]">videnplay.com/market/42</span>
-                </div>
+
+            {/* Mock card */}
+            <div style={{ background: "#0B1A0C", borderRadius: 20, overflow: "hidden", border: "1.5px solid #1C301D" }}>
+              <div style={{ background: "#152018", padding: "12px 16px", borderBottom: "1px solid #1C301D", display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ width: 10, height: 10, borderRadius: "50%", background: "#EF4444", opacity: 0.6, display: "inline-block" }} />
+                <span style={{ width: 10, height: 10, borderRadius: "50%", background: "#EAB308", opacity: 0.6, display: "inline-block" }} />
+                <span style={{ width: 10, height: 10, borderRadius: "50%", background: "#22C55E", opacity: 0.6, display: "inline-block" }} />
+                <span style={{ marginLeft: 8, fontSize: 11, color: "#4A6B4E" }}>videnplay.com/market/42</span>
               </div>
-              <div className="p-5 space-y-4">
-                <div className="flex items-center gap-2">
-                  <span className="text-2xl">⚽</span>
-                  <span className="text-xs font-bold text-accent-light bg-accent/10 border border-accent/20 px-2 py-0.5 rounded-full uppercase tracking-wide">Deportes</span>
+              <div style={{ padding: 20, display: "flex", flexDirection: "column", gap: 14 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ fontSize: 22 }}>⚽</span>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: "#5CB87A", background: "rgba(92,184,122,0.12)", border: "1px solid rgba(92,184,122,0.25)", padding: "3px 10px", borderRadius: 99, letterSpacing: "0.12em", textTransform: "uppercase" }}>Deportes</span>
                 </div>
-                <p className="text-base font-bold text-white">¿Ganará el Real Madrid la Champions 2025?</p>
-                <div className="h-24 bg-[#1B2A1E] rounded-xl flex items-end px-3 pb-2 gap-1 overflow-hidden">
+                <p style={{ fontSize: 15, fontWeight: 700, color: "#F5EFE0" }}>¿Ganará el Real Madrid la Champions 2025?</p>
+                <div style={{ height: 72, background: "#112012", borderRadius: 12, display: "flex", alignItems: "flex-end", padding: "0 10px 8px", gap: 3, overflow: "hidden" }}>
                   {[45,48,52,50,55,60,58,63,61,67,65,70,68,72].map((v, i) => (
-                    <div key={i} className="flex-1 rounded-sm" style={{ height: `${v}%`, background: `rgba(16,185,129,${0.3 + i*0.05})` }} />
+                    <div key={i} style={{ flex: 1, borderRadius: 3, height: `${v}%`, background: `rgba(46,168,85,${0.28 + i * 0.04})` }} />
                   ))}
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="rounded-xl bg-success/10 border border-success/20 p-3 text-center">
-                    <div className="text-xs text-[#8A9E8D] mb-1">Paga SÍ</div>
-                    <div className="text-xl font-extrabold text-success">1.45x</div>
-                    <div className="text-[10px] text-[#8A9E8D] mt-0.5">69% prob.</div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                  <div style={{ background: "rgba(46,168,85,0.12)", border: "1px solid rgba(46,168,85,0.25)", borderRadius: 12, padding: "12px 8px", textAlign: "center" }}>
+                    <div style={{ fontSize: 10, color: "#9DB89F", marginBottom: 4 }}>Paga SÍ</div>
+                    <div style={{ fontSize: 22, fontWeight: 900, color: "#2EA855" }}>1.45x</div>
+                    <div style={{ fontSize: 10, color: "#9DB89F", marginTop: 2 }}>69% prob.</div>
                   </div>
-                  <div className="rounded-xl bg-danger/10 border border-danger/20 p-3 text-center">
-                    <div className="text-xs text-[#8A9E8D] mb-1">Paga NO</div>
-                    <div className="text-xl font-extrabold text-danger">3.22x</div>
-                    <div className="text-[10px] text-[#8A9E8D] mt-0.5">31% prob.</div>
+                  <div style={{ background: "rgba(239,68,68,0.10)", border: "1px solid rgba(239,68,68,0.22)", borderRadius: 12, padding: "12px 8px", textAlign: "center" }}>
+                    <div style={{ fontSize: 10, color: "#9DB89F", marginBottom: 4 }}>Paga NO</div>
+                    <div style={{ fontSize: 22, fontWeight: 900, color: "#EF4444" }}>3.22x</div>
+                    <div style={{ fontSize: 10, color: "#9DB89F", marginTop: 2 }}>31% prob.</div>
                   </div>
                 </div>
-                <div className="flex gap-2">
-                  <button className="flex-1 bg-success/20 hover:bg-success/30 border border-success/30 text-success text-xs font-bold py-2.5 rounded-xl transition-colors">
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button style={{ flex: 1, background: "rgba(46,168,85,0.18)", border: "1px solid rgba(46,168,85,0.3)", color: "#2EA855", fontWeight: 700, fontSize: 12, padding: "10px 0", borderRadius: 10, cursor: "pointer" }}>
                     Apostar SÍ
                   </button>
-                  <button className="flex-1 bg-danger/20 hover:bg-danger/30 border border-danger/30 text-danger text-xs font-bold py-2.5 rounded-xl transition-colors">
+                  <button style={{ flex: 1, background: "rgba(239,68,68,0.14)", border: "1px solid rgba(239,68,68,0.28)", color: "#EF4444", fontWeight: 700, fontSize: 12, padding: "10px 0", borderRadius: 10, cursor: "pointer" }}>
                     Apostar NO
                   </button>
                 </div>
               </div>
             </div>
           </div>
-        </section>
+        </Section>
 
-        {/* ── MODELO DE NEGOCIO ── */}
-        <section className="py-20 border-t border-white/5">
-          <div className="text-center mb-12">
-            <SectionLabel>Modelo de negocio</SectionLabel>
-            <SectionTitle>Múltiples fuentes<br />de ingresos</SectionTitle>
+        {/* ── MODELO DE NEGOCIO — WHITE ── */}
+        <Section bg={WHITE}>
+          <div style={{ textAlign: "center", marginBottom: 48 }}>
+            <Pill>Modelo de negocio</Pill>
+            <H2>Múltiples fuentes<br />de ingresos</H2>
           </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: 20 }}>
             {REVENUE_STREAMS.map(r => (
-              <div key={r.label} className="rounded-2xl bg-surface border border-border p-6 flex flex-col gap-3">
-                <div className="text-3xl font-black text-accent-light">{r.pct}</div>
-                <p className="text-sm text-[#8A9E8D] leading-snug">{r.label}</p>
+              <div key={r.label} style={{
+                background: CREAM, border: "1.5px solid #D9CEB5",
+                borderRadius: 20, padding: "28px 24px",
+              }}>
+                <div style={{ fontSize: 34, fontWeight: 900, color: "#3D8A56", marginBottom: 10 }}>{r.pct}</div>
+                <p style={{ fontSize: 14, color: "#4A5C4C", lineHeight: 1.55 }}>{r.label}</p>
               </div>
             ))}
           </div>
-        </section>
+        </Section>
 
-        {/* ── PROYECCIONES ── */}
-        <section className="py-20 border-t border-white/5">
-          <div className="text-center mb-12">
-            <SectionLabel>Proyecciones</SectionLabel>
-            <SectionTitle>Camino hacia<br />la rentabilidad</SectionTitle>
-            <p className="text-[#8A9E8D] max-w-lg mx-auto text-sm">Proyecciones conservadoras basadas en tasas de crecimiento comparables de Polymarket y Augur en sus primeros 3 años.</p>
+        {/* ── PROYECCIONES — LIGHT GREEN ── */}
+        <Section bg={LGREEN}>
+          <div style={{ textAlign: "center", marginBottom: 48 }}>
+            <Pill>Proyecciones</Pill>
+            <H2>Camino hacia<br />la rentabilidad</H2>
+            <Body center>
+              Proyecciones conservadoras basadas en tasas de crecimiento comparables de Polymarket y Augur en sus primeros 3 años.
+            </Body>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full">
+          <div style={{ background: WHITE, borderRadius: 20, border: "1.5px solid #C8D9CC", overflow: "hidden" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
-                <tr className="border-b border-white/10">
-                  <th className="text-left py-3 px-4 text-xs font-bold text-[#6B7D6E] uppercase tracking-wide">Período</th>
-                  <th className="text-right py-3 px-4 text-xs font-bold text-[#6B7D6E] uppercase tracking-wide">Usuarios</th>
-                  <th className="text-right py-3 px-4 text-xs font-bold text-[#6B7D6E] uppercase tracking-wide">Volumen</th>
-                  <th className="text-right py-3 px-4 text-xs font-bold text-[#6B7D6E] uppercase tracking-wide">Ingresos</th>
+                <tr style={{ background: CREAM }}>
+                  <th style={{ textAlign: "left", padding: "14px 24px", fontSize: 11, fontWeight: 700, color: "#5A6B5C", textTransform: "uppercase", letterSpacing: "0.12em" }}>Período</th>
+                  <th style={{ textAlign: "right", padding: "14px 24px", fontSize: 11, fontWeight: 700, color: "#5A6B5C", textTransform: "uppercase", letterSpacing: "0.12em" }}>Usuarios</th>
+                  <th style={{ textAlign: "right", padding: "14px 24px", fontSize: 11, fontWeight: 700, color: "#5A6B5C", textTransform: "uppercase", letterSpacing: "0.12em" }}>Volumen</th>
+                  <th style={{ textAlign: "right", padding: "14px 24px", fontSize: 11, fontWeight: 700, color: "#5A6B5C", textTransform: "uppercase", letterSpacing: "0.12em" }}>Ingresos</th>
                 </tr>
               </thead>
               <tbody>
                 {PROJECTIONS.map((p, i) => (
-                  <tr key={p.year} className={`border-b border-white/5 ${i === PROJECTIONS.length - 1 ? "bg-accent/5" : ""}`}>
-                    <td className="py-4 px-4 font-bold text-white text-sm">{p.year}</td>
-                    <td className="py-4 px-4 text-right text-sm text-[#D4E8D8]">{p.users}</td>
-                    <td className="py-4 px-4 text-right text-sm text-success font-semibold">{p.vol}</td>
-                    <td className="py-4 px-4 text-right text-sm text-accent-light font-semibold">{p.rev}</td>
+                  <tr key={p.year} style={{ borderTop: "1px solid #E0EBDE", background: i === PROJECTIONS.length - 1 ? "rgba(61,138,86,0.05)" : "transparent" }}>
+                    <td style={{ padding: "18px 24px", fontWeight: 700, color: "#0F1E11", fontSize: 15 }}>{p.year}</td>
+                    <td style={{ padding: "18px 24px", textAlign: "right", color: "#4A5C4C", fontSize: 14 }}>{p.users}</td>
+                    <td style={{ padding: "18px 24px", textAlign: "right", color: "#2E6E42", fontWeight: 700, fontSize: 14 }}>{p.vol}</td>
+                    <td style={{ padding: "18px 24px", textAlign: "right", color: "#3D8A56", fontWeight: 700, fontSize: 14 }}>{p.rev}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-        </section>
+        </Section>
 
-        {/* ── ROADMAP ── */}
-        <section className="py-20 border-t border-white/5">
-          <div className="text-center mb-12">
-            <SectionLabel>Roadmap</SectionLabel>
-            <SectionTitle>Lo que hemos construido<br />y hacia dónde vamos</SectionTitle>
+        {/* ── ROADMAP — CREAM ── */}
+        <Section bg={CREAM}>
+          <div style={{ textAlign: "center", marginBottom: 48 }}>
+            <Pill>Roadmap</Pill>
+            <H2>Lo que hemos construido<br />y hacia dónde vamos</H2>
           </div>
-          <div className="relative flex flex-col gap-0">
-            {/* vertical line */}
-            <div className="absolute left-[19px] sm:left-[23px] top-3 bottom-3 w-px bg-white/10" />
-            {ROADMAP.map((item) => (
-              <div key={item.q} className="flex items-start gap-5 py-4 pl-1">
-                <div className={`shrink-0 w-10 h-10 rounded-full border-2 flex items-center justify-center z-10 ${
-                  item.done
-                    ? "bg-success/20 border-success/60"
-                    : "bg-surface border-border"
-                }`}>
+          <div style={{ maxWidth: 600, margin: "0 auto", position: "relative" }}>
+            <div style={{ position: "absolute", left: 19, top: 8, bottom: 8, width: 2, background: "#C8D9CC" }} />
+            {ROADMAP.map(item => (
+              <div key={item.q} style={{ display: "flex", gap: 20, paddingBottom: 28 }}>
+                <div style={{
+                  flexShrink: 0, width: 40, height: 40, borderRadius: "50%",
+                  background: item.done ? "#3D8A56" : WHITE,
+                  border: `2px solid ${item.done ? "#3D8A56" : "#C8D9CC"}`,
+                  display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1,
+                }}>
                   {item.done
-                    ? <span className="text-success text-sm">✓</span>
-                    : <span className="w-2 h-2 rounded-full bg-border block" />
+                    ? <span style={{ color: "#fff", fontWeight: 900, fontSize: 16 }}>✓</span>
+                    : <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#C8D9CC", display: "inline-block" }} />
                   }
                 </div>
-                <div className="pt-1.5">
-                  <span className={`text-xs font-bold uppercase tracking-widest ${item.done ? "text-success" : "text-[#6B7D6E]"}`}>
+                <div style={{ paddingTop: 8 }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.15em", color: item.done ? "#3D8A56" : "#8A9E8D" }}>
                     {item.q}
                   </span>
-                  <p className="text-sm text-[#D4E8D8] mt-0.5 leading-relaxed">{item.text}</p>
+                  <p style={{ fontSize: 14, color: "#0F1E11", marginTop: 4, lineHeight: 1.6 }}>{item.text}</p>
                 </div>
               </div>
             ))}
           </div>
-        </section>
+        </Section>
 
-        {/* ── POR QUÉ AHORA ── */}
-        <section className="py-20 border-t border-white/5">
-          <div className="rounded-2xl bg-gradient-to-br from-accent/10 via-surface to-surface border border-accent/20 p-8 sm:p-12 text-center">
-            <SectionLabel>¿Por qué ahora?</SectionLabel>
-            <SectionTitle>El momento es ahora<br />o nunca</SectionTitle>
-            <div className="grid sm:grid-cols-3 gap-6 mt-10 text-left">
-              <div className="space-y-2">
-                <div className="text-2xl">📊</div>
-                <h4 className="font-bold text-white text-sm">Categoría validada</h4>
-                <p className="text-xs text-[#8A9E8D] leading-relaxed">Polymarket procesó más de $2B en Q1 2025. El mercado existe y crece. Solo falta la versión para LATAM.</p>
-              </div>
-              <div className="space-y-2">
-                <div className="text-2xl">🏆</div>
-                <h4 className="font-bold text-white text-sm">Ventana de oportunidad</h4>
-                <p className="text-xs text-[#8A9E8D] leading-relaxed">Ningún competidor directo en español con UX mobile-first, sin cripto requerida y enfocado en deportes locales.</p>
-              </div>
-              <div className="space-y-2">
-                <div className="text-2xl">🚀</div>
-                <h4 className="font-bold text-white text-sm">Producto funcional hoy</h4>
-                <p className="text-xs text-[#8A9E8D] leading-relaxed">No es una idea. El producto está en producción con mercados activos, torneos y resolución automática.</p>
-              </div>
-            </div>
+        {/* ── POR QUÉ AHORA — WHITE ── */}
+        <Section bg={WHITE}>
+          <div style={{ textAlign: "center", marginBottom: 48 }}>
+            <Pill>¿Por qué ahora?</Pill>
+            <H2>El momento es ahora<br />o nunca</H2>
           </div>
-        </section>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(260px,1fr))", gap: 24 }}>
+            {[
+              { icon: "📊", title: "Categoría validada", desc: "Polymarket procesó más de $2B en Q1 2025. El mercado existe y crece. Solo falta la versión para LATAM." },
+              { icon: "🏆", title: "Ventana de oportunidad", desc: "Ningún competidor directo en español con UX mobile-first, sin cripto requerida y enfocado en deportes locales." },
+              { icon: "🚀", title: "Producto funcional hoy", desc: "No es una idea. El producto está en producción con mercados activos, torneos y resolución automática." },
+            ].map(c => (
+              <div key={c.title} style={{
+                background: LGREEN, border: "1.5px solid #C8D9CC",
+                borderRadius: 20, padding: "28px 24px",
+              }}>
+                <div style={{ fontSize: 32, marginBottom: 12 }}>{c.icon}</div>
+                <h4 style={{ fontSize: 16, fontWeight: 700, color: "#0F1E11", marginBottom: 8 }}>{c.title}</h4>
+                <p style={{ fontSize: 14, color: "#4A5C4C", lineHeight: 1.6 }}>{c.desc}</p>
+              </div>
+            ))}
+          </div>
+        </Section>
 
-        {/* ── CONTACTO ── */}
-        <section id="contacto" className="py-20 border-t border-white/5">
-          <div className="max-w-2xl mx-auto text-center mb-10">
-            <SectionLabel>Contacto</SectionLabel>
-            <SectionTitle>¿Te interesa<br />invertir en Viden?</SectionTitle>
-            <p className="text-[#8A9E8D] text-base">
+        {/* ── CONTACTO — LIGHT GREEN ── */}
+        <Section bg={LGREEN} id="contacto">
+          <div style={{ maxWidth: 560, margin: "0 auto", textAlign: "center", marginBottom: 40 }}>
+            <Pill>Contacto</Pill>
+            <H2>¿Te interesa<br />invertir en Viden?</H2>
+            <Body center>
               Estamos buscando inversores seed que compartan la visión de democratizar las predicciones para el mundo hispanohablante. Escríbenos y te enviamos el deck completo.
-            </p>
+            </Body>
           </div>
-          <div className="max-w-xl mx-auto">
+          <div style={{ maxWidth: 520, margin: "0 auto" }}>
             <ContactForm />
           </div>
-        </section>
+        </Section>
 
         {/* ── FOOTER ── */}
-        <footer className="py-10 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[#6B7D6E]">
-          <span className="font-bold text-white/40">VidenPlay © 2025</span>
-          <div className="flex items-center gap-4">
-            <Link href="/" className="hover:text-white transition-colors">Ir a la plataforma →</Link>
+        <footer style={{ background: CREAM, borderTop: "1px solid #D9CEB5", padding: "32px 24px" }}>
+          <div style={{ maxWidth: 1080, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: "#0F1E11" }}>VidenPlay © 2025</span>
+            <Link href="/" style={{ fontSize: 13, color: "#3D8A56", textDecoration: "none", fontWeight: 600 }}>
+              Ir a la plataforma →
+            </Link>
           </div>
         </footer>
 
