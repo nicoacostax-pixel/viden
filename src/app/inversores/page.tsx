@@ -37,11 +37,11 @@ const PROJECTIONS = [
 ];
 
 const ROADMAP = [
-  { q: "Q2 2025", done: true,  text: "MVP: mercados binarios custodiales, torneos, BTC live" },
-  { q: "Q3 2025", done: true,  text: "Deportes en vivo con resolución automática" },
-  { q: "Q4 2025", done: false, text: "App móvil iOS / Android + notificaciones push" },
-  { q: "Q1 2026", done: false, text: "Mercados multi-outcome, ligas privadas y API pública" },
-  { q: "Q2 2026", done: false, text: "Expansión Brasil (PT) + integración fiat MercadoPago" },
+  { q: "Q2 2026", done: true,  text: "MVP: mercados binarios custodiales, torneos, BTC live" },
+  { q: "Q3 2026", done: true,  text: "Deportes en vivo con resolución automática" },
+  { q: "Q4 2026", done: false, text: "App móvil iOS / Android + notificaciones push" },
+  { q: "Q1 2027", done: false, text: "Mercados multi-outcome, ligas privadas y API pública" },
+  { q: "Q2 2027", done: false, text: "Expansión Brasil (PT) + integración fiat MercadoPago" },
 ];
 
 const MARKET_STATS = [
@@ -226,7 +226,7 @@ export default function InvestorsPage() {
               padding: "6px 16px", borderRadius: 99, marginBottom: 32,
             }}>
               <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#2EA855", display: "inline-block", animation: "pulse 1.5s infinite" }} />
-              Buscando inversión seed — Ronda abierta 2025
+              Buscando inversión seed — Ronda abierta 2026
             </div>
 
             <h1 style={{ fontSize: "clamp(36px,8vw,72px)", fontWeight: 900, color: "#0F1E11", lineHeight: 1.08, marginBottom: 24 }}>
@@ -480,7 +480,7 @@ export default function InvestorsPage() {
         {/* ── FOOTER ── */}
         <footer style={{ background: CREAM, borderTop: "1px solid #D9CEB5", padding: "32px 24px" }}>
           <div style={{ maxWidth: 1080, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
-            <span style={{ fontSize: 13, fontWeight: 700, color: "#0F1E11" }}>VidenPlay © 2025</span>
+            <span style={{ fontSize: 13, fontWeight: 700, color: "#0F1E11" }}>VidenPlay © 2026</span>
             <Link href="/" style={{ fontSize: 13, color: "#3D8A56", textDecoration: "none", fontWeight: 600 }}>
               Ir a la plataforma →
             </Link>
