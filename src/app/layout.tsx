@@ -46,7 +46,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     <Image src="/logoverde1.jpg" alt="Viden" width={32} height={32} className="rounded-md block dark:hidden" priority />
                     {/* dark mode logo */}
                     <Image src="/logoverde.jpg" alt="Viden" width={32} height={32} className="rounded-md hidden dark:block" priority />
-                    <span className="text-xl font-bold text-foreground">Viden</span>
+                    <span className="text-xl font-bold text-foreground">Viden<span className="text-accent">Play</span></span>
                   </Link>
                   <NavLinks />
                 </div>
