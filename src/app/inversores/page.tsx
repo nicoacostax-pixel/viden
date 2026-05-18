@@ -294,7 +294,7 @@ export default function InvestorsPage() {
 
         {/* ── SOLUCIÓN — CREAM ── */}
         <Section bg={CREAM} id="como-funciona">
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 60, alignItems: "center" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(300px,1fr))", gap: 48, alignItems: "center" }}>
             <div>
               <Pill>La solución</Pill>
               <H2>Predicciones para todos,<br />no solo para expertos</H2>

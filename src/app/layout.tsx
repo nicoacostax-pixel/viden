@@ -12,6 +12,7 @@ import PWAManager from "@/components/PWAManager";
 import { PushPrompt } from "@/components/PushPrompt";
 import Link from "next/link";
 import Image from "next/image";
+import { SiteHeader, SiteFooter, SiteMain } from "@/components/SiteChrome";
 
 export const metadata: Metadata = {
   title: "Viden — Mercado de Predicciones",
@@ -38,36 +39,38 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ThemeProvider>
           <AuthProvider>
           <Web3Provider>
-            <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-sm">
-              <div className="max-w-5xl mx-auto px-3 sm:px-4 py-2.5 flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2 sm:gap-6">
-                  <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-                    {/* light mode logo */}
-                    <Image src="/logoverde1.jpg" alt="Viden" width={32} height={32} className="rounded-md block dark:hidden" priority />
-                    {/* dark mode logo */}
-                    <Image src="/logoverde.jpg" alt="Viden" width={32} height={32} className="rounded-md hidden dark:block" priority />
-                    <span className="text-xl font-bold text-foreground">Viden<span className="text-accent">Play</span></span>
-                  </Link>
-                  <NavLinks />
+            <SiteHeader>
+              <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-sm">
+                <div className="max-w-5xl mx-auto px-3 sm:px-4 py-2.5 flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 sm:gap-6">
+                    <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+                      <Image src="/logoverde1.jpg" alt="Viden" width={32} height={32} className="rounded-md block dark:hidden" priority />
+                      <Image src="/logoverde.jpg" alt="Viden" width={32} height={32} className="rounded-md hidden dark:block" priority />
+                      <span className="text-xl font-bold text-foreground">Viden<span className="text-accent">Play</span></span>
+                    </Link>
+                    <NavLinks />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <ThemeToggle />
+                    <WalletButton />
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <ThemeToggle />
-                  <WalletButton />
+              </header>
+              <WrongNetworkBanner />
+            </SiteHeader>
+            <SiteMain>{children}</SiteMain>
+            <SiteFooter>
+              <footer className="border-t border-border mt-8">
+                <div className="max-w-5xl mx-auto px-4 py-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted">
+                  <span>© 2026 Viden · Todos los derechos reservados</span>
+                  <div className="flex items-center gap-4">
+                    <Link href="/terminos" className="hover:text-foreground transition-colors">Términos y Condiciones</Link>
+                    <Link href="/privacidad" className="hover:text-foreground transition-colors">Política de Privacidad</Link>
+                    <a href="mailto:legal@viden.app" className="hover:text-foreground transition-colors">legal@viden.app</a>
+                  </div>
                 </div>
-              </div>
-            </header>
-            <WrongNetworkBanner />
-            <main className="max-w-5xl mx-auto px-4 py-8">{children}</main>
-            <footer className="border-t border-border mt-8">
-              <div className="max-w-5xl mx-auto px-4 py-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted">
-                <span>© 2026 Viden · Todos los derechos reservados</span>
-                <div className="flex items-center gap-4">
-                  <Link href="/terminos" className="hover:text-foreground transition-colors">Términos y Condiciones</Link>
-                  <Link href="/privacidad" className="hover:text-foreground transition-colors">Política de Privacidad</Link>
-                  <a href="mailto:legal@viden.app" className="hover:text-foreground transition-colors">legal@viden.app</a>
-                </div>
-              </div>
-            </footer>
+              </footer>
+            </SiteFooter>
           </Web3Provider>
           </AuthProvider>
         </ThemeProvider>
