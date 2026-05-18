@@ -230,8 +230,8 @@ export default function InvestorsPage() {
             </div>
 
             <h1 style={{ fontSize: "clamp(36px,8vw,72px)", fontWeight: 900, color: "#0F1E11", lineHeight: 1.08, marginBottom: 24 }}>
-              El Polymarket<br />
-              <span style={{ color: "#3D8A56" }}>de Latinoamérica</span>
+              Predice el futuro.<br />
+              <span style={{ color: "#3D8A56" }}>En tu idioma.</span>
             </h1>
 
             <p style={{ fontSize: "clamp(15px,2.2vw,19px)", color: "#4A5C4C", lineHeight: 1.6, maxWidth: 600, margin: "0 auto 40px" }}>
@@ -458,6 +458,64 @@ export default function InvestorsPage() {
                 <div style={{ fontSize: 32, marginBottom: 12 }}>{c.icon}</div>
                 <h4 style={{ fontSize: 16, fontWeight: 700, color: "#0F1E11", marginBottom: 8 }}>{c.title}</h4>
                 <p style={{ fontSize: 14, color: "#4A5C4C", lineHeight: 1.6 }}>{c.desc}</p>
+              </div>
+            ))}
+          </div>
+        </Section>
+
+        {/* ── VALUACIÓN — CREAM ── */}
+        <Section bg={CREAM}>
+          <div style={{ textAlign: "center", marginBottom: 48 }}>
+            <Pill>Valuación</Pill>
+            <H2>Valuación pre-money<br /><span style={{ color: "#3D8A56" }}>$1.5M – $4M USD</span></H2>
+            <Body center>
+              Rango seed justificado por tracción, mercado y modelo. Negociable según perfil del inversor.
+            </Body>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 16, maxWidth: 720, margin: "0 auto" }}>
+            {[
+              {
+                n: "1",
+                title: "Producto en producción, no una idea",
+                desc: "La plataforma está live con mercados activos, resolución automática, torneos y usuarios reales. El riesgo de ejecución ya está demostrado.",
+              },
+              {
+                n: "2",
+                title: "Mercado de $200B+ sin líder en español",
+                desc: "650 millones de hispanohablantes no tienen una plataforma de predicciones dedicada. El TAM existe y está validado por el crecimiento global de la categoría.",
+              },
+              {
+                n: "3",
+                title: "Modelo de ingresos claro y probado",
+                desc: "4% de fee por apuesta + comisión al creador. Sin depender de publicidad ni de subsidios. Ingresos desde el primer mercado resuelto.",
+              },
+              {
+                n: "4",
+                title: "Tecnología diferenciada",
+                desc: "Precios algorítmicos LMSR, resolución automática por datos en tiempo real y cuenta custodial sin wallet. Barreras técnicas reales frente a copias.",
+              },
+              {
+                n: "5",
+                title: "Momento de mercado único",
+                desc: "El interés global en mercados de predicción está en su punto más alto. Entrar ahora es capturar LATAM antes de que llegue un jugador con capital masivo.",
+              },
+            ].map(item => (
+              <div key={item.n} style={{
+                display: "flex", gap: 20, alignItems: "flex-start",
+                background: WHITE, border: "1.5px solid #D9CEB5",
+                borderRadius: 18, padding: "22px 24px",
+              }}>
+                <div style={{
+                  flexShrink: 0, width: 36, height: 36, borderRadius: "50%",
+                  background: "#3D8A56", display: "flex", alignItems: "center",
+                  justifyContent: "center", color: "#fff", fontWeight: 900, fontSize: 15,
+                }}>
+                  {item.n}
+                </div>
+                <div>
+                  <h4 style={{ fontSize: 15, fontWeight: 700, color: "#0F1E11", marginBottom: 6 }}>{item.title}</h4>
+                  <p style={{ fontSize: 14, color: "#4A5C4C", lineHeight: 1.65 }}>{item.desc}</p>
+                </div>
               </div>
             ))}
           </div>
