@@ -12,7 +12,7 @@ import PWAManager from "@/components/PWAManager";
 import { PushPrompt } from "@/components/PushPrompt";
 import Link from "next/link";
 import Image from "next/image";
-import { SiteHeader, SiteFooter, SiteMain } from "@/components/SiteChrome";
+import { SiteHeader, SiteFooter, SiteMain, SiteBackButton } from "@/components/SiteChrome";
 
 export const metadata: Metadata = {
   title: "Viden — Mercado de Predicciones",
@@ -75,7 +75,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </AuthProvider>
         </ThemeProvider>
         <PWAManager />
-        <BackButton />
+        <SiteBackButton><BackButton /></SiteBackButton>
         <PushPrompt />
       </body>
     </html>
