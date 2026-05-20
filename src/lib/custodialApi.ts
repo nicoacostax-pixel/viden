@@ -24,6 +24,9 @@ export type AuthUser = {
   id: number;
   email: string;
   username: string;
+  display_name?: string | null;
+  bio?: string | null;
+  avatar_url?: string | null;
   balance_usd: number;
   balance_vdn: number;
   balance_vdn_vesting: number;
@@ -236,8 +239,18 @@ export type PriceHistoryPoint = {
   timestamp:  number;
 };
 
+export type MultiPriceHistoryPoint = {
+  timestamp:       number;
+  price_local:     number;
+  price_empate:    number;
+  price_visitante: number;
+};
+
 export async function apiGetPriceHistory(market_id: number) {
-  return req(`/api/markets/${market_id}/price-history`) as Promise<{ history: PriceHistoryPoint[] }>;
+  return req(`/api/markets/${market_id}/price-history`) as Promise<{
+    history: PriceHistoryPoint[] | MultiPriceHistoryPoint[];
+    is_multi?: boolean;
+  }>;
 }
 
 export async function apiGetOrderbook(market_id: number) {
@@ -385,6 +398,7 @@ export type AdminUser = {
   balance_usd: number;
   balance_vdn: number;
   kyc_status:  string;
+  is_admin:    number;
   created_at:  number;
 };
 
@@ -406,6 +420,14 @@ export async function apiGetAdminUsers(token: string) {
   return req("/api/admin/custodial/users", {
     headers: authHeaders(token),
   }) as Promise<{ users: AdminUser[] }>;
+}
+
+export async function apiSetUserAdmin(token: string, email: string, isAdmin: boolean) {
+  return req(`/api/admin/custodial/${isAdmin ? "promote" : "demote"}-admin`, {
+    method: "POST",
+    headers: authHeaders(token),
+    body: JSON.stringify({ email }),
+  }) as Promise<{ ok: boolean }>;
 }
 
 export async function apiGetAllOpenMarkets(token: string) {
@@ -542,6 +564,60 @@ export async function apiGetMyTournamentEntry(token: string, id: number) {
   }>;
 }
 
+// ── Feed de actividad ─────────────────────────────────────────────────────────
+
+export type FeedItem = {
+  username:     string;
+  display_name: string | null;
+  avatar_url:   string | null;
+  side:         "yes" | "no";
+  amount:       number;
+  status:       string;
+  question:     string;
+  market_id:    number;
+  emoji:        string | null;
+  ts:           number;
+  type:         "bet";
+};
+
+export async function apiGetFeed(token: string | null, filter: "global" | "following" = "global", limit = 20): Promise<{ feed: FeedItem[]; filter: string }> {
+  const headers: Record<string, string> = {};
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+  return req(`/api/feed?filter=${filter}&limit=${limit}`, { headers }) as Promise<{ feed: FeedItem[]; filter: string }>;
+}
+
+// ── Social follows ─────────────────────────────────────────────────────────────
+
+export async function apiFollow(token: string, username: string): Promise<{ following: boolean; followers_count: number }> {
+  return req(`/api/social/follow/${username}`, { method: "POST", headers: authHeaders(token) }) as Promise<{ following: boolean; followers_count: number }>;
+}
+
+export async function apiUnfollow(token: string, username: string): Promise<{ following: boolean; followers_count: number }> {
+  return req(`/api/social/follow/${username}`, { method: "DELETE", headers: authHeaders(token) }) as Promise<{ following: boolean; followers_count: number }>;
+}
+
+export async function apiGetFollowers(username: string) {
+  return req(`/api/social/followers/${username}`) as Promise<{ followers: { username: string; display_name: string | null; avatar_url: string | null; bio: string | null }[] }>;
+}
+
+export async function apiGetFollowing(username: string) {
+  return req(`/api/social/following/${username}`) as Promise<{ following: { username: string; display_name: string | null; avatar_url: string | null; bio: string | null }[] }>;
+}
+
+export async function apiCreateTournament(token: string, data: {
+  name:              string;
+  description?:      string;
+  entry_fee_vdn:     number;
+  duration_hours:    number;
+  max_participants?: number;
+}): Promise<{ ok: boolean; tournament_id: number }> {
+  return req("/api/tournaments", {
+    method:  "POST",
+    headers: authHeaders(token),
+    body:    JSON.stringify(data),
+  }) as Promise<{ ok: boolean; tournament_id: number }>;
+}
+
 export async function apiUpdateProfile(token: string, data: { username?: string; avatar_url?: string }) {
   return req("/api/auth/profile", {
     method: "PATCH",
@@ -575,22 +651,132 @@ export async function apiDeleteMarket(token: string, market_id: number) {
   }) as Promise<{ message: string }>;
 }
 
+// ── Reactions ─────────────────────────────────────────────────────────────────
+
+export type ReactionsData = {
+  counts: Record<string, number>;
+  mine:   string[];
+};
+
+export async function apiGetReactions(type: "market" | "bet", id: number, token?: string | null) {
+  const headers: Record<string, string> = {};
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+  return req(`/api/reactions/${type}/${id}`, { headers }) as Promise<ReactionsData>;
+}
+
+export async function apiToggleReaction(token: string, type: "market" | "bet", id: number, emoji: string) {
+  return req(`/api/reactions/${type}/${id}`, {
+    method: "POST",
+    headers: authHeaders(token),
+    body: JSON.stringify({ emoji }),
+  }) as Promise<ReactionsData>;
+}
+
+// ── Notifications ─────────────────────────────────────────────────────────────
+
+export type AppNotification = {
+  id:                   number;
+  type:                 string;
+  ref_type:             string | null;
+  ref_id:               number | null;
+  extra:                Record<string, unknown> | null;
+  read:                 number;
+  created_at:           number;
+  actor_username:       string | null;
+  actor_display_name:   string | null;
+  actor_avatar_url:     string | null;
+};
+
+export async function apiGetNotifications(token: string) {
+  return req("/api/notifications", { headers: authHeaders(token) }) as Promise<{ notifications: AppNotification[] }>;
+}
+
+export async function apiGetUnreadCount(token: string) {
+  return req("/api/notifications/unread-count", { headers: authHeaders(token) }) as Promise<{ count: number }>;
+}
+
+export async function apiMarkAllRead(token: string) {
+  return req("/api/notifications/read-all", { method: "POST", headers: authHeaders(token) }) as Promise<{ ok: boolean }>;
+}
+
+export async function apiMarkRead(token: string, id: number) {
+  return req(`/api/notifications/${id}/read`, { method: "POST", headers: authHeaders(token) }) as Promise<{ ok: boolean }>;
+}
+
+// ── Duels ─────────────────────────────────────────────────────────────────────
+
+export type Duel = {
+  id:                      number;
+  challenger_id:           number;
+  challenged_id:           number;
+  market_id:               number;
+  challenger_side:         "yes" | "no";
+  challenged_side:         "yes" | "no" | null;
+  stake_vdn:               number;
+  status:                  "pending" | "accepted" | "declined" | "resolved" | "cancelled";
+  winner_id:               number | null;
+  created_at:              number;
+  resolved_at:             number | null;
+  challenger_username:     string;
+  challenger_display_name: string | null;
+  challenger_avatar:       string | null;
+  challenged_username:     string;
+  challenged_display_name: string | null;
+  challenged_avatar:       string | null;
+  winner_username:         string | null;
+  question:                string;
+  market_status:           string;
+  emoji:                   string | null;
+};
+
+export async function apiCreateDuel(token: string, data: {
+  challenged_username: string;
+  market_id:           number;
+  my_side:             "yes" | "no";
+  stake_vdn:           number;
+}) {
+  return req("/api/duels", {
+    method: "POST",
+    headers: authHeaders(token),
+    body: JSON.stringify(data),
+  }) as Promise<{ ok: boolean; duel_id: number }>;
+}
+
+export async function apiGetMyDuels(token: string) {
+  return req("/api/duels", { headers: authHeaders(token) }) as Promise<{ duels: Duel[] }>;
+}
+
+export async function apiAcceptDuel(token: string, id: number) {
+  return req(`/api/duels/${id}/accept`, { method: "POST", headers: authHeaders(token) }) as Promise<{ ok: boolean; challenged_side: string }>;
+}
+
+export async function apiDeclineDuel(token: string, id: number) {
+  return req(`/api/duels/${id}/decline`, { method: "POST", headers: authHeaders(token) }) as Promise<{ ok: boolean }>;
+}
+
 // ── Withdrawals ───────────────────────────────────────────────────────────────
 
 export type WithdrawResult = {
   amount_vdn: number;
   amount_usd: number;
-  tx_hash: string;
-  to_address: string;
+  clabe: string;
+  account_holder: string;
+  bank_name: string;
   new_balance_vdn: number;
-  explorer_url: string;
+  status: string;
 };
 
-export async function apiWithdraw(token: string, amount_vdn: number, to_address: string) {
+export async function apiWithdraw(
+  token: string,
+  amount_vdn: number,
+  clabe: string,
+  account_holder: string,
+  bank_name: string,
+) {
   return req("/api/wallet/withdraw", {
     method: "POST",
     headers: authHeaders(token),
-    body: JSON.stringify({ amount_vdn, to_address }),
+    body: JSON.stringify({ amount_vdn, clabe, account_holder, bank_name }),
   }) as Promise<WithdrawResult>;
 }
 

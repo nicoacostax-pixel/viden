@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
-import { useAccount } from "wagmi";
 import { apiDeposit, apiCreatePaymentIntent, apiConfirmPayment, apiStripeConfirm, apiWithdraw, apiGetTransactions, ApiError, type DepositResult, type WithdrawResult, type Transaction } from "@/lib/custodialApi";
 import { DailyStreak } from "@/components/DailyStreak";
 
@@ -259,35 +258,40 @@ function ReinvestBanner({ expiresAt, onDeposit }: { expiresAt: number; onDeposit
 // ── Withdraw modal ────────────────────────────────────────────────────────────
 
 const MIN_WITHDRAW    = 500;
-const WAGER_REQUIRED  = 1500;
+const WAGER_REQUIRED  = 1000;   // 1000 VDN = $10 USD
+const MIN_DEPOSIT_USD = 10;
 const EXPLORER        = "https://amoy.polygonscan.com";
 
-function WithdrawModal({ balance, wagered, onClose, onSuccess }: {
+function WithdrawModal({ balance, wagered, depositedUsd, onClose, onSuccess }: {
   balance: number;
   wagered: number;
+  depositedUsd: number;
   onClose: () => void;
   onSuccess: (r: WithdrawResult) => void;
 }) {
   const { token } = useAuth();
-  const { address: mmAddress } = useAccount();
 
   const [amount,   setAmount]   = useState("");
-  const [addr,     setAddr]     = useState(mmAddress ?? "");
+  const [clabe,    setClabe]    = useState("");
+  const [holder,   setHolder]   = useState("");
+  const [bankName, setBankName] = useState("");
   const [loading,  setLoading]  = useState(false);
   const [error,    setError]    = useState<string | null>(null);
 
-  const vdnNum       = parseFloat(amount) || 0;
-  const usdEq        = vdnNum * VDN_PRICE;
-  const wagerMet     = wagered >= WAGER_REQUIRED;
-  const wagerPct     = Math.min(100, Math.round((wagered / WAGER_REQUIRED) * 100));
-  const wagerRemain  = Math.max(0, WAGER_REQUIRED - wagered);
-  const canSend      = wagerMet && vdnNum >= MIN_WITHDRAW && vdnNum <= balance && addr.length > 0 && !loading;
+  const vdnNum        = parseFloat(amount) || 0;
+  const usdEq         = vdnNum * VDN_PRICE;
+  const depositMet    = depositedUsd >= MIN_DEPOSIT_USD;
+  const wagerRequired = Math.max(WAGER_REQUIRED, Math.round(depositedUsd / VDN_PRICE));
+  const wagerMet      = depositMet && wagered >= wagerRequired;
+  const wagerPct      = Math.min(100, Math.round((wagered / wagerRequired) * 100));
+  const wagerRemain   = Math.max(0, wagerRequired - wagered);
+  const canSend       = depositMet && wagerMet && vdnNum >= MIN_WITHDRAW && vdnNum <= balance && /^\d{18}$/.test(clabe) && holder.trim().length >= 3 && !loading;
 
   async function handleWithdraw() {
     if (!token) return;
     setLoading(true); setError(null);
     try {
-      const result = await apiWithdraw(token, vdnNum, addr.trim());
+      const result = await apiWithdraw(token, vdnNum, clabe.trim(), holder.trim(), bankName.trim());
       onSuccess(result);
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "Error al procesar el retiro");
@@ -299,32 +303,58 @@ function WithdrawModal({ balance, wagered, onClose, onSuccess }: {
     <Modal title="Retirar VDN" onClose={onClose}>
       {error && <div className="p-3 rounded-lg bg-danger/10 border border-danger/20 text-sm text-danger">{error}</div>}
 
-      {/* Wagering requirement gate */}
-      {!wagerMet && (
+      {/* Gate 1: depósito mínimo */}
+      {!depositMet && (
+        <div className="p-4 rounded-xl bg-warning/10 border border-warning/20 space-y-3">
+          <div className="flex items-start gap-3">
+            <span className="text-xl shrink-0">💳</span>
+            <div>
+              <p className="text-sm font-semibold text-foreground">Depósito mínimo requerido</p>
+              <p className="text-xs text-muted mt-0.5 leading-relaxed">
+                Para habilitar retiros necesitas depositar al menos <strong className="text-foreground">${MIN_DEPOSIT_USD} USD</strong>.
+                Has depositado <strong className="text-warning">${depositedUsd.toFixed(2)} USD</strong> hasta ahora.
+              </p>
+            </div>
+          </div>
+          <button onClick={onClose}
+            className="block w-full py-2.5 rounded-xl bg-accent hover:bg-accent-hover text-white text-sm font-semibold text-center transition-colors">
+            💳 Depositar ahora
+          </button>
+        </div>
+      )}
+
+      {/* Gate 2: wagering del depósito */}
+      {depositMet && !wagerMet && (
         <div className="p-4 rounded-xl bg-warning/10 border border-warning/20 space-y-3">
           <div className="flex items-start gap-3">
             <span className="text-xl shrink-0">🔒</span>
             <div>
-              <p className="text-sm font-semibold text-foreground">Requisito de apuesta no cumplido</p>
+              <p className="text-sm font-semibold text-foreground">Apuesta tu depósito primero</p>
               <p className="text-xs text-muted mt-0.5 leading-relaxed">
-                Para retirar debes haber apostado al menos <strong className="text-foreground">{WAGER_REQUIRED} VDN</strong> en mercados.
-                Faltan <strong className="text-warning">{wagerRemain.toLocaleString("es", { maximumFractionDigits: 0 })} VDN</strong> por apostar.
+                Debes apostar al menos <strong className="text-foreground">{wagerRequired.toLocaleString("es", { maximumFractionDigits: 0 })} VDN</strong> en mercados o minijuegos.
+                Faltan <strong className="text-warning">{wagerRemain.toLocaleString("es", { maximumFractionDigits: 0 })} VDN</strong>.
               </p>
             </div>
           </div>
           <div className="space-y-1">
             <div className="flex justify-between text-xs text-muted">
               <span>Progreso</span>
-              <span className="font-semibold text-foreground">{wagered.toLocaleString("es", { maximumFractionDigits: 0 })} / {WAGER_REQUIRED} VDN</span>
+              <span className="font-semibold text-foreground">{wagered.toLocaleString("es", { maximumFractionDigits: 0 })} / {wagerRequired.toLocaleString("es", { maximumFractionDigits: 0 })} VDN</span>
             </div>
             <div className="h-2 rounded-full bg-surface-alt overflow-hidden">
               <div className="h-full rounded-full bg-warning transition-all" style={{ width: `${wagerPct}%` }} />
             </div>
           </div>
-          <a href="/" onClick={onClose}
-            className="block w-full py-2.5 rounded-xl bg-accent hover:bg-accent-hover text-white text-sm font-semibold text-center transition-colors">
-            Ir a apostar →
-          </a>
+          <div className="flex gap-2">
+            <a href="/" onClick={onClose}
+              className="flex-1 py-2.5 rounded-xl bg-accent hover:bg-accent-hover text-white text-sm font-semibold text-center transition-colors">
+              🎯 Ir a mercados
+            </a>
+            <a href="/juegos" onClick={onClose}
+              className="flex-1 py-2.5 rounded-xl border border-border hover:border-accent text-sm font-semibold text-center text-foreground transition-colors">
+              🎮 Minijuegos
+            </a>
+          </div>
         </div>
       )}
 
@@ -359,38 +389,50 @@ function WithdrawModal({ balance, wagered, onClose, onSuccess }: {
         </div>
       </div>
 
-      {/* Destination address */}
-      <div>
-        <label className="block text-xs text-muted mb-1.5">Dirección de destino (Polygon)</label>
-        {mmAddress && (
-          <button onClick={() => setAddr(mmAddress)}
-            className={`mb-2 w-full flex items-center gap-2 px-3 py-2 rounded-lg border text-sm transition-colors ${
-              addr === mmAddress ? "border-accent bg-accent/5 text-accent-light" : "border-border hover:border-accent text-muted"
-            }`}>
-            <span>🦊</span>
-            <span className="font-mono text-xs truncate">{mmAddress}</span>
-            {addr !== mmAddress && <span className="ml-auto text-xs shrink-0">Usar esta</span>}
-            {addr === mmAddress && <span className="ml-auto text-xs shrink-0 text-accent-light">✓ Seleccionada</span>}
-          </button>
-        )}
-        <input
-          type="text" value={addr}
-          onChange={e => setAddr(e.target.value)}
-          placeholder="0x…"
-          className="w-full px-4 py-2.5 rounded-lg bg-background border border-border text-sm text-foreground placeholder:text-muted focus:outline-none focus:border-accent transition-colors font-mono"
-        />
+      {/* Datos bancarios */}
+      <div className="space-y-3">
+        <div>
+          <label className="block text-xs text-muted mb-1.5">CLABE interbancaria (18 dígitos)</label>
+          <input
+            type="text" inputMode="numeric" maxLength={18} value={clabe}
+            onChange={e => setClabe(e.target.value.replace(/\D/g, "").slice(0, 18))}
+            placeholder="000000000000000000"
+            className="w-full px-4 py-2.5 rounded-lg bg-background border border-border text-foreground placeholder:text-muted focus:outline-none focus:border-accent transition-colors font-mono tracking-widest text-sm"
+          />
+          {clabe.length > 0 && clabe.length !== 18 && (
+            <p className="text-xs text-danger mt-1">{18 - clabe.length} dígitos restantes</p>
+          )}
+        </div>
+        <div>
+          <label className="block text-xs text-muted mb-1.5">Nombre del titular</label>
+          <input
+            type="text" value={holder}
+            onChange={e => setHolder(e.target.value)}
+            placeholder="Como aparece en tu cuenta bancaria"
+            className="w-full px-4 py-2.5 rounded-lg bg-background border border-border text-sm text-foreground placeholder:text-muted focus:outline-none focus:border-accent transition-colors"
+          />
+        </div>
+        <div>
+          <label className="block text-xs text-muted mb-1.5">Banco (opcional)</label>
+          <input
+            type="text" value={bankName}
+            onChange={e => setBankName(e.target.value)}
+            placeholder="BBVA, Banorte, HSBC…"
+            className="w-full px-4 py-2.5 rounded-lg bg-background border border-border text-sm text-foreground placeholder:text-muted focus:outline-none focus:border-accent transition-colors"
+          />
+        </div>
       </div>
 
       {/* Info strip */}
       <div className="p-3 rounded-xl bg-surface-alt border border-border space-y-1.5 text-xs text-muted">
-        <div className="flex justify-between"><span>Red</span><span className="text-foreground font-medium">Polygon Amoy</span></div>
-        <div className="flex justify-between"><span>Gas</span><span className="text-success font-medium">Gratis (lo paga Viden)</span></div>
-        <div className="flex justify-between"><span>Mínimo</span><span className="text-foreground font-medium">{MIN_WITHDRAW} VDN</span></div>
+        <div className="flex justify-between"><span>Método</span><span className="text-foreground font-medium">Transferencia SPEI</span></div>
+        <div className="flex justify-between"><span>Tiempo</span><span className="text-foreground font-medium">1–2 días hábiles</span></div>
+        <div className="flex justify-between"><span>Mínimo</span><span className="text-foreground font-medium">{MIN_WITHDRAW} VDN (≈ ${(MIN_WITHDRAW * VDN_PRICE).toFixed(0)} USD)</span></div>
         <div className="flex justify-between"><span>Cooldown</span><span className="text-foreground font-medium">1 retiro / 24h</span></div>
       </div>
 
       <p className="text-[11px] text-muted text-center leading-relaxed">
-        ⚠️ Los retiros son irreversibles. Verifica que la dirección sea correcta y que soporte la red Polygon.
+        ⚠️ Verifica que la CLABE y el titular sean correctos. Los retiros se procesan en 1–2 días hábiles.
       </p>
 
       <div className="flex gap-2">
@@ -411,28 +453,31 @@ function WithdrawModal({ balance, wagered, onClose, onSuccess }: {
 
 function WithdrawSuccess({ result, onClose }: { result: WithdrawResult; onClose: () => void }) {
   return (
-    <Modal title="¡Retiro enviado!" onClose={onClose}>
+    <Modal title="¡Solicitud enviada!" onClose={onClose}>
       <div className="text-center py-4">
-        <span className="text-5xl">🚀</span>
+        <span className="text-5xl">🏦</span>
         <p className="mt-3 text-2xl font-black text-foreground">
           {result.amount_vdn.toLocaleString("es", { maximumFractionDigits: 0 })} VDN
         </p>
-        <p className="text-sm text-muted mt-1">≈ ${result.amount_usd.toFixed(2)} USD · enviados on-chain</p>
+        <p className="text-sm text-muted mt-1">≈ ${result.amount_usd.toFixed(2)} USD · en proceso</p>
       </div>
       <div className="space-y-2 text-sm">
         <div className="flex justify-between p-3 rounded-lg bg-surface-alt">
-          <span className="text-muted">Destino</span>
-          <span className="font-mono text-xs text-foreground">{result.to_address.slice(0,8)}…{result.to_address.slice(-6)}</span>
+          <span className="text-muted">CLABE destino</span>
+          <span className="font-mono text-xs text-foreground">{result.clabe.slice(0,6)}…{result.clabe.slice(-4)}</span>
+        </div>
+        <div className="flex justify-between p-3 rounded-lg bg-surface-alt">
+          <span className="text-muted">Titular</span>
+          <span className="text-xs text-foreground">{result.account_holder}</span>
         </div>
         <div className="flex justify-between p-3 rounded-lg bg-surface-alt">
           <span className="text-muted">Nuevo balance</span>
           <span className="font-semibold text-accent-light">{result.new_balance_vdn.toLocaleString("es", { maximumFractionDigits: 0 })} VDN</span>
         </div>
+        <div className="p-3 rounded-lg bg-warning/10 border border-warning/20 text-xs text-warning text-center">
+          ⏳ La transferencia SPEI se procesa en 1–2 días hábiles
+        </div>
       </div>
-      <a href={result.explorer_url} target="_blank" rel="noopener noreferrer"
-        className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-border text-sm font-medium text-foreground hover:border-accent transition-colors">
-        Ver en Polygonscan →
-      </a>
       <button onClick={onClose}
         className="w-full py-2.5 rounded-xl bg-accent hover:bg-accent-hover text-white font-semibold text-sm transition-colors">
         Cerrar
@@ -818,6 +863,7 @@ function WalletInner() {
     levels: { l1: { total: number; converted: number; bonus_per_conversion: number }; l2: { total: number; converted: number; bonus_per_conversion: number }; l3: { total: number; converted: number; bonus_per_conversion: number } };
     total_referrals: number;
     total_earned_vdn: number;
+    week_streak?: { count: number; milestone_3_reached: boolean; milestone_5_reached: boolean; milestones: { count: number; bonus: number; reached: boolean; badge?: string }[] };
   } | null>(null);
   const [refCopied,        setRefCopied]         = useState(false);
 
@@ -909,7 +955,7 @@ function WalletInner() {
           <span style={{ fontSize: '36px' }}>🎁</span>
           <div style={{ flex: 1 }}>
             <div style={{ color: 'white', fontWeight: 'bold', fontSize: '16px' }}>500 VDN esperándote</div>
-            <div style={{ color: '#C4B5FD', fontSize: '13px' }}>Instala Viden como app · Valor: $5.00 USD · Solo una vez</div>
+            <div style={{ color: '#A3CFAA', fontSize: '13px' }}>Instala Viden como app · Valor: $5.00 USD · Solo una vez</div>
           </div>
           <button onClick={() => window.dispatchEvent(new Event('pwa-install-trigger'))} style={{ background: '#3A9E6A', color: 'white', border: 'none', borderRadius: '10px', padding: '10px 14px', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer' }}>
             📲 Instalar
@@ -991,12 +1037,12 @@ function WalletInner() {
           {/* Header */}
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-bold text-foreground">🔗 Invita amigos</p>
-              <p className="text-xs text-muted">Gana VDN cuando tus referidos hagan su primera apuesta</p>
+              <p className="text-sm font-bold text-foreground">🎁 Regala VDN a tus amigos</p>
+              <p className="text-xs text-muted">Tu amigo recibe 1,000 VDN gratis · tú ganas 500 VDN</p>
             </div>
             {referralInfo.total_earned_vdn > 0 && (
               <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-success/10 text-success border border-success/20">
-                +{referralInfo.total_earned_vdn} VDN ganados
+                +{referralInfo.total_earned_vdn.toLocaleString()} VDN ganados
               </span>
             )}
           </div>
@@ -1004,18 +1050,53 @@ function WalletInner() {
           {/* Link */}
           <div className="flex items-center gap-2 p-3 rounded-xl bg-background border border-border">
             <code className="flex-1 text-xs text-accent-light font-mono truncate">
-              {typeof window !== "undefined" ? `${window.location.origin}/registro?ref=${referralInfo.referral_code}` : `viden.app/registro?ref=${referralInfo.referral_code}`}
+              {typeof window !== "undefined" ? `${window.location.origin}/registro?ref=${referralInfo.referral_code}` : `videnplay.com/registro?ref=${referralInfo.referral_code}`}
             </code>
             <button
               onClick={() => {
                 const url = `${window.location.origin}/registro?ref=${referralInfo.referral_code}`;
-                if (navigator.share) navigator.share({ title: "Únete a Viden", url });
+                const text = `Te regalo 1,000 VDN en Viden 🎁 — apuesta en mercados de predicción gratis. Entra aquí:`;
+                if (navigator.share) navigator.share({ title: "Regala 1,000 VDN", text, url });
                 else { navigator.clipboard.writeText(url); setRefCopied(true); setTimeout(() => setRefCopied(false), 2000); }
               }}
               className="shrink-0 text-xs font-semibold px-3 py-1.5 rounded-lg bg-accent text-white hover:bg-accent-hover transition-colors">
-              {refCopied ? "✓ Copiado" : "Compartir"}
+              {refCopied ? "✓ Copiado" : "🔗 Compartir"}
             </button>
           </div>
+
+          {/* Weekly streak */}
+          {referralInfo.week_streak && (
+            <div className="p-3 rounded-xl bg-background border border-border space-y-2">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-bold text-foreground">🔥 Racha semanal</p>
+                <p className="text-xs text-muted">{referralInfo.week_streak.count} referido{referralInfo.week_streak.count !== 1 ? 's' : ''} esta semana</p>
+              </div>
+              <div className="flex gap-2">
+                {referralInfo.week_streak.milestones.map(m => {
+                  const reached = referralInfo.week_streak!.count >= m.count;
+                  return (
+                    <div key={m.count} className={`flex-1 p-2 rounded-lg border text-center transition-all ${reached ? 'border-accent bg-accent/10' : 'border-border bg-background'}`}>
+                      {m.badge && reached && <div className="text-base">👑</div>}
+                      <div className={`text-[10px] font-black ${reached ? 'text-accent-light' : 'text-muted'}`}>
+                        {m.count} referidos
+                      </div>
+                      <div className={`text-[10px] font-bold ${reached ? 'text-success' : 'text-muted'}`}>
+                        +{m.bonus.toLocaleString()} VDN
+                      </div>
+                      {m.badge && <div className="text-[9px] text-accent-light font-bold">Viden Legend</div>}
+                    </div>
+                  );
+                })}
+              </div>
+              {/* Progress bar */}
+              <div className="h-1.5 rounded-full bg-border overflow-hidden">
+                <div
+                  className="h-full bg-accent transition-all duration-500 rounded-full"
+                  style={{ width: `${Math.min(100, (referralInfo.week_streak.count / 5) * 100)}%` }}
+                />
+              </div>
+            </div>
+          )}
 
           {/* Niveles */}
           <div className="grid grid-cols-3 gap-2">
@@ -1032,7 +1113,7 @@ function WalletInner() {
               </div>
             ))}
           </div>
-          <p className="text-[10px] text-muted text-center">El bono se acredita cuando el referido hace su primera apuesta</p>
+          <p className="text-[10px] text-muted text-center">Bono individual se acredita en la primera apuesta del referido</p>
         </div>
       )}
 
@@ -1051,6 +1132,7 @@ function WalletInner() {
         <WithdrawModal
           balance={vdn}
           wagered={balance?.total_wagered_vdn ?? 0}
+          depositedUsd={balance?.total_deposited_usd ?? 0}
           onClose={() => setShowWithdraw(false)}
           onSuccess={r => { setShowWithdraw(false); setWithdrawResult(r); refreshBalance(); }}
         />
