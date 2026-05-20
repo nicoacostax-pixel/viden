@@ -131,7 +131,7 @@ function WalletConnectModal({ onConnect, onClose }: { onConnect: () => void; onC
 // ── Custodial user pill ───────────────────────────────────────────────────────
 
 function CustodialUserMenu() {
-  const { user, balance, logout, isAdmin } = useAuth();
+  const { user, balance, logout, isAdmin, isLoggedIn } = useAuth();
   const { isConnected, address } = useAccount();
   const { connect, connectors } = useConnect();
   const { disconnect } = useDisconnect();
@@ -213,11 +213,11 @@ function CustodialUserMenu() {
           </button>
         </div>
 
-        {/* Crear CTA */}
+        {/* Depositar CTA */}
         <div className="px-4 pb-3 shrink-0">
-          <Link href="/crear-mercado" onClick={() => setOpen(false)}
+          <Link href="/wallet?open=deposit" onClick={() => setOpen(false)}
             className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-accent hover:bg-accent-hover text-white text-sm font-semibold transition-colors">
-            <span className="text-base">＋</span> Crear mercado
+            <span className="text-base">＋</span> Depositar
           </Link>
         </div>
 
@@ -227,14 +227,24 @@ function CustodialUserMenu() {
         <nav className="flex-1 overflow-y-auto py-3 px-3 space-y-0.5">
           <p className="text-[10px] font-semibold uppercase tracking-widest text-muted px-3 pb-1.5 pt-1">Explorar</p>
           {navItem("/", "🎯", "Mercados", true)}
+          {navItem("/feed", "🌐", "Feed")}
           {navItem("/torneos", "🏆", "Torneos")}
           {navItem("/leaderboard", "🥇", "Ranking")}
-          {navItem("/logros", "🏅", "Logros")}
+          {navItem("/logros", "⭐", "Logros")}
           {navItem("/juegos", "🎮", "Juegos")}
+          {navItem("/duelos", "⚔️", "Duelos")}
+
+          {isLoggedIn && (
+            <Link href="/crear-mercado" onClick={() => setOpen(false)}
+              className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold bg-accent hover:bg-accent-hover text-white transition-colors mt-1">
+              <span className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/20 text-base">＋</span>
+              Crear mercado
+            </Link>
+          )}
 
           <div className="h-px bg-border my-2 mx-1" />
           <p className="text-[10px] font-semibold uppercase tracking-widest text-muted px-3 pb-1.5 pt-1">Mi cuenta</p>
-          {navItem("/cuenta", "👤", "Mi cuenta")}
+          {navItem("/perfil", "👤", "Mi perfil")}
           {navItem("/portfolio", "📊", "Portfolio")}
           {navItem("/mis-mercados", "📋", "Mis mercados")}
           {navItem("/wallet", "💰", "Mi Wallet")}
@@ -318,6 +328,10 @@ function CustodialUserMenu() {
         <>
           <div className="hidden sm:block fixed inset-0 z-40" onClick={() => setOpen(false)} />
           <div className="hidden sm:block absolute right-0 top-full mt-1 w-52 rounded-xl bg-surface border border-border shadow-xl z-50 overflow-hidden">
+            <Link href="/perfil" onClick={() => setOpen(false)}
+              className="flex items-center gap-2.5 px-4 py-2.5 text-sm hover:bg-surface-alt transition-colors text-foreground">
+              ✏️ Editar perfil
+            </Link>
             <Link href="/wallet" onClick={() => setOpen(false)}
               className="flex items-center gap-2.5 px-4 py-2.5 text-sm hover:bg-surface-alt transition-colors text-foreground">
               💰 Mi Wallet
@@ -325,6 +339,14 @@ function CustodialUserMenu() {
             <Link href="/portfolio" onClick={() => setOpen(false)}
               className="flex items-center gap-2.5 px-4 py-2.5 text-sm hover:bg-surface-alt transition-colors text-foreground">
               📊 Portfolio
+            </Link>
+            <Link href="/mis-mercados" onClick={() => setOpen(false)}
+              className="flex items-center gap-2.5 px-4 py-2.5 text-sm hover:bg-surface-alt transition-colors text-foreground">
+              📋 Mis mercados
+            </Link>
+            <Link href="/logros" onClick={() => setOpen(false)}
+              className="flex items-center gap-2.5 px-4 py-2.5 text-sm hover:bg-surface-alt transition-colors text-foreground">
+              ⭐ Logros
             </Link>
             <div className="border-t border-border" />
             {isConnected ? (
